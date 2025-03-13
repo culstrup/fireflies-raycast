@@ -16,12 +16,13 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 env_path = os.path.join(script_dir, ".env")
 load_dotenv(dotenv_path=env_path)
 
-# Get API key from environment
-FIREFLIES_API_KEY = os.environ.get("FIREFLIES_API_KEY", "")
+# API endpoint
 GRAPHQL_ENDPOINT = "https://api.fireflies.ai/graphql"
 
 def main():
-    if not FIREFLIES_API_KEY:
+    # Get API key from environment
+    api_key = os.environ.get("FIREFLIES_API_KEY", "")
+    if not api_key:
         print("Error: FIREFLIES_API_KEY not set.")
         sys.exit(1)
 
@@ -52,7 +53,7 @@ def main():
     variables = {"limit": 5}  # or however many you want to fetch
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {FIREFLIES_API_KEY}"
+        "Authorization": f"Bearer {api_key}"
     }
 
     resp = requests.post(GRAPHQL_ENDPOINT, 

@@ -43,59 +43,54 @@ class TestFetchFireflies(unittest.TestCase):
         
         self.assertEqual(extract_transcript_ids(invalid_urls), [])
     
-    @patch('requests.post')
-    def test_format_transcript(self, mock_post):
-        """Test transcript formatting"""
+    @patch('fireflies_api.FirefliesAPI')
+    def test_api_integration(self, mock_api_class):
+        """Test integration with FirefliesAPI class"""
         
         # Import the module
-        from fetch_fireflies_from_chrome_tabs import format_transcript
+        import fetch_fireflies_from_chrome_tabs
         
-        # Create a mock transcript
+        # Create a mock FirefliesAPI instance
+        mock_api = MagicMock()
+        mock_api_class.return_value = mock_api
+        
+        # Mock the get_transcript_by_id method
         transcript = {
             "title": "Test Meeting",
             "dateString": "2025-01-01T12:00:00Z",
-            "summary": {
-                "overview": "This is a test summary"
-            },
+            "summary": {"overview": "Test summary"},
             "sentences": [
-                {
-                    "speaker_name": "Alice",
-                    "text": "Hello, this is a test."
-                },
-                {
-                    "speaker_name": "Bob",
-                    "text": "Testing, 1, 2, 3."
-                }
+                {"speaker_name": "Alice", "text": "Hello"}
             ]
         }
+        mock_api.get_transcript_by_id.return_value = transcript
         
-        formatted = format_transcript(transcript)
+        # Mock format_transcript to return a simple string
+        mock_api.format_transcript.return_value = "Formatted transcript"
         
-        # Check that key elements are in the formatted text
-        self.assertIn("Test Meeting", formatted)
-        self.assertIn("2025-01-01T12:00:00Z", formatted)
-        self.assertIn("This is a test summary", formatted)
-        self.assertIn("Alice: Hello, this is a test.", formatted)
-        self.assertIn("Bob: Testing, 1, 2, 3.", formatted)
-        
-        # Test with missing summary
-        transcript_no_summary = {
-            "title": "Test Meeting",
-            "dateString": "2025-01-01T12:00:00Z",
-            "sentences": [
-                {
-                    "speaker_name": "Alice",
-                    "text": "Hello, this is a test."
-                }
-            ]
-        }
-        
-        formatted_no_summary = format_transcript(transcript_no_summary)
-        
-        # Verify it still works without a summary
-        self.assertIn("Test Meeting", formatted_no_summary)
-        self.assertIn("Alice: Hello, this is a test.", formatted_no_summary)
-        self.assertNotIn("Summary", formatted_no_summary)
+        # Patch the functions that would normally find transcripts
+        with patch('fetch_fireflies_from_chrome_tabs.get_chrome_tabs', return_value=["url1"]):
+            with patch('fetch_fireflies_from_chrome_tabs.extract_transcript_ids', return_value=["id1"]):
+                # Patch pyperclip.copy to check what gets copied
+                with patch('pyperclip.copy') as mock_copy:
+                    # Run the main function with sys.exit and print patched
+                    with patch('sys.exit'):
+                        with patch('builtins.print'):
+                            fetch_fireflies_from_chrome_tabs.main()
+                    
+                    # Verify API was initialized
+                    mock_api_class.assert_called_once()
+                    
+                    # Verify get_transcript_by_id was called
+                    mock_api.get_transcript_by_id.assert_called_with("id1")
+                    
+                    # Verify format_transcript was called
+                    mock_api.format_transcript.assert_called_with(transcript)
+                    
+                    # Verify something was copied to clipboard (with newlines added)
+                    mock_copy.assert_called_once()
+                    args = mock_copy.call_args[0][0]
+                    self.assertIn("Formatted transcript", args)
 
 if __name__ == '__main__':
     unittest.main()

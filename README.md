@@ -53,9 +53,11 @@ FlyCast solves this problem by making it effortless to:
 ## 📋 How to Get Your Fireflies API Key
 
 1. Log in to your Fireflies.ai account
-2. Go to [Settings > API](https://fireflies.ai/settings/api)
-3. Generate a new API key
-4. Copy the key and paste it when prompted during setup (or add to `.env` file)
+2. Go to [Settings](https://app.fireflies.ai/settings)
+3. Click on "Developer Settings"
+4. Scroll down to the API key section
+5. Generate a new API key
+6. Copy the key and paste it when prompted during setup (or add to `.env` file)
 
 > ⚠️ **IMPORTANT**: Keep your API key secure! Never share it publicly or commit it to a repository. The `.env` file is included in `.gitignore` to prevent accidentally committing your key.
 

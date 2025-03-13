@@ -15,9 +15,30 @@ Access your [Fireflies.ai](https://fireflies.ai) meeting transcripts directly fr
 
 Perfect for quickly referencing meeting notes, summaries, and transcripts while working.
 
-![Fireflies Raycast Demo](screenshots/demo.png)
+## 🤔 Why FlyCast?
 
-*Note: Add your screenshots to the screenshots directory!*
+Context is king when working with AI. Meeting transcripts contain some of the most valuable context for your work, but they're often trapped in siloed systems, making it hard to leverage this data.
+
+FlyCast solves this problem by making it effortless to:
+
+- Extract transcript data from Fireflies (one of the few providers with an accessible API)
+- Instantly use meeting transcripts with powerful AI tools like Claude, ChatGPT, and others
+- Dramatically reduce friction when providing meeting context to AI systems
+
+**Common Use Cases:**
+- Provide user feedback from meetings to improve products
+- Draft comprehensive follow-up emails after important discussions
+- Get AI coaching and feedback on sales calls or negotiations
+- Turn complex discussions into bespoke proposals
+- Combine transcripts from multiple meetings on the same project for complete context
+
+## 📸 Screenshots
+
+**Copy Latest Transcript:**  
+![Copy Latest Transcript](screenshots/FlyCast-copy-latest.png)
+
+**Fetch All Transcripts from Chrome Tabs:**  
+![Fetch from Chrome](screenshots/FlyCast-copy-all-from-chrome.png)
 
 ## 🚀 Quick Setup
 

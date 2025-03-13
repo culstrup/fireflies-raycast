@@ -1,6 +1,6 @@
-# Contributing to Fireflies Raycast Extension
+# Contributing to FlyCast
 
-Thank you for considering contributing to the Fireflies Raycast Extension! This document provides guidelines and instructions for contributing.
+Thank you for considering contributing to FlyCast! This document provides guidelines and instructions for contributing.
 
 ## Code of Conduct
 
@@ -62,7 +62,7 @@ When submitting a pull request, please:
 ## Testing
 
 - Test your changes on macOS
-- Verify that the extension works with Raycast
+- Verify that the scripts work with Raycast
 - Check for any Python exceptions or warnings
 
 Thank you for your contributions!

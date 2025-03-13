@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Create a report to help improve the extension
+about: Create a report to help improve FlyCast
 title: '[BUG] '
 labels: bug
 assignees: ''

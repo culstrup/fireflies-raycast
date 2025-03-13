@@ -1,6 +1,6 @@
 # Distribution Checklist
 
-Before packaging this extension for distribution on Gumroad or GitHub, make sure:
+Before packaging FlyCast for distribution on Gumroad or GitHub, make sure:
 
 ## Files to Include:
 - [x] Python scripts:
@@ -32,7 +32,7 @@ Before packaging this extension for distribution on Gumroad or GitHub, make sure
 2. Upload the zip file
 3. Set your price (or "Pay what you want")
 4. Write a compelling product description using content from the README
-5. Add screenshots of the extension in action
+5. Add screenshots of FlyCast in action
 6. Provide clear setup instructions
 
 ## GitHub Setup (Alternative):

@@ -1,4 +1,4 @@
-# Fireflies Raycast Extension
+# FlyCast
 
 <div align="center">
 
@@ -8,7 +8,7 @@
 
 </div>
 
-Access your [Fireflies.ai](https://fireflies.ai) meeting transcripts directly from [Raycast](https://raycast.com)! This extension allows you to:
+Access your [Fireflies.ai](https://fireflies.ai) meeting transcripts directly from [Raycast](https://raycast.com)! This script collection allows you to:
 
 1. **Copy your latest transcript** to your clipboard with a single command
 2. **Fetch transcripts from open Chrome tabs** and copy them to your clipboard
@@ -35,6 +35,8 @@ Perfect for quickly referencing meeting notes, summaries, and transcripts while 
 2. Go to [Settings > API](https://fireflies.ai/settings/api)
 3. Generate a new API key
 4. Copy the key and paste it when prompted during setup (or add to `.env` file)
+
+> ⚠️ **IMPORTANT**: Keep your API key secure! Never share it publicly or commit it to a repository. The `.env` file is included in `.gitignore` to prevent accidentally committing your key.
 
 ## 🧩 Available Commands
 
@@ -101,7 +103,7 @@ If you experience issues:
 
 ## ❤️ Support This Project
 
-If you find this extension useful, consider supporting its development:
+If you find FlyCast useful, consider supporting its development:
 
 - [Buy me a coffee on Ko-fi](https://ko-fi.com/culstrup)
 - Star the repository on GitHub

@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an idea for this extension
+about: Suggest an idea for FlyCast
 title: '[FEATURE] '
 labels: enhancement
 assignees: ''

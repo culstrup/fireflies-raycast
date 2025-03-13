@@ -6,6 +6,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Local development files
+LOCAL_SCRATCHPAD.md
+*.local.md
+
 # Logs
 debug.log
 *.log

@@ -20,63 +20,103 @@ class TestFirefliesClipboard(unittest.TestCase):
         # Ensure we have a fresh import for each test
         if 'fireflies_clipboard' in sys.modules:
             del sys.modules['fireflies_clipboard']
+        if 'fireflies_api' in sys.modules:
+            del sys.modules['fireflies_api']
     
     @patch('sys.exit')
-    @patch('requests.post')
-    @patch('dotenv.load_dotenv', return_value=True)
-    def test_no_api_key(self, mock_dotenv, mock_post, mock_exit):
+    @patch('fireflies_api.FirefliesAPI')
+    def test_no_api_key(self, mock_api_class, mock_exit):
         """Test behavior when no API key is set"""
         
-        # Mock every call to os.environ.get to return empty string
-        with patch('os.environ.get', return_value=""):
-            # Now import the module with mocked env
-            import fireflies_clipboard
-            # Run the main function
-            fireflies_clipboard.main()
-            
-            # Assert that sys.exit was called with error code 1
-            mock_exit.assert_called_once_with(1)
-            # Assert that requests.post was not called
-            mock_post.assert_not_called()
+        # Make FirefliesAPI raise ValueError when initialized
+        mock_api_class.side_effect = ValueError("FIREFLIES_API_KEY not set")
+        
+        # Now import the module
+        import fireflies_clipboard
+        
+        # Run the main function
+        fireflies_clipboard.main()
+        
+        # Assert that sys.exit was called with error code 1
+        # We expect it could be called multiple times due to nested exception handling
+        # So we just check that it was called at least once with the right code
+        self.assertTrue(mock_exit.call_count >= 1)
+        mock_exit.assert_any_call(1)
     
-    @patch('requests.post')
-    @patch('dotenv.load_dotenv', return_value=True)
-    def test_api_call_made(self, mock_dotenv, mock_post):
-        """Test that API call is made with the correct parameters"""
+    @patch('fireflies_api.FirefliesAPI')
+    def test_api_integration(self, mock_api_class):
+        """Test integration with FirefliesAPI class"""
         
-        # Create a response mock
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "data": {
-                "transcripts": []  # Empty list to simulate no transcripts
-            }
+        # Create a mock FirefliesAPI instance
+        mock_api = MagicMock()
+        mock_api_class.return_value = mock_api
+        
+        # Mock get_recent_transcripts to return a list with one transcript
+        transcript = {
+            "title": "Test Meeting",
+            "dateString": "2025-01-01T12:00:00Z",
+            "summary": {"overview": "Test summary"},
+            "sentences": [
+                {"speaker_name": "Alice", "text": "Hello"}
+            ]
         }
-        mock_post.return_value = mock_response
+        mock_api.get_recent_transcripts.return_value = [transcript]
         
-        # Mock environment to return fake API key
-        with patch('os.environ.get', return_value="fake-api-key"):
-            # Import the module with mocked env
-            import fireflies_clipboard
-            
-            # Run the main function with sys.exit patched to prevent actual exit
+        # Mock format_transcript to return a simple string
+        mock_api.format_transcript.return_value = "Formatted transcript"
+        
+        # Import the module
+        import fireflies_clipboard
+        
+        # Patch setup_clipboard to check what gets processed
+        with patch('fireflies_clipboard.setup_clipboard') as mock_clipboard:
+            # Patch date_parser.isoparse to avoid actually parsing the date
+            with patch('dateutil.parser.isoparse', return_value="2025-01-01"):
+                # Run the main function
+                fireflies_clipboard.main()
+        
+        # Verify API was initialized
+        mock_api_class.assert_called_once()
+        
+        # Verify get_recent_transcripts was called
+        mock_api.get_recent_transcripts.assert_called_once()
+        
+        # Verify format_transcript was called with the transcript
+        mock_api.format_transcript.assert_called_once_with(transcript)
+        
+        # Verify clipboard was set up with the formatted transcript
+        mock_clipboard.assert_called_once_with("Formatted transcript")
+    
+    @patch('fireflies_api.FirefliesAPI')
+    def test_processing_transcript(self, mock_api_class):
+        """Test handling of a transcript that's still processing"""
+        
+        # Create a mock FirefliesAPI instance
+        mock_api = MagicMock()
+        mock_api_class.return_value = mock_api
+        
+        # Mock get_recent_transcripts to return a transcript without sentences
+        processing_transcript = {
+            "title": "Processing Meeting",
+            "dateString": "2025-01-01T12:00:00Z",
+            "summary": {"overview": "Test summary"},
+            "sentences": []  # Empty sentences indicates processing
+        }
+        mock_api.get_recent_transcripts.return_value = [processing_transcript]
+        
+        # Import the module
+        import fireflies_clipboard
+        
+        # Run the main function with patched print and exit
+        with patch('builtins.print') as mock_print:
             with patch('sys.exit'):
                 fireflies_clipboard.main()
-            
-            # Assert that requests.post was called
-            mock_post.assert_called_once()
-            
-            # Get the arguments it was called with
-            args, kwargs = mock_post.call_args
-            
-            # Assert that the API endpoint is correct
-            self.assertEqual(args[0], "https://api.fireflies.ai/graphql")
-            
-            # Assert that the Authorization header contains the API key
-            self.assertEqual(kwargs['headers']['Authorization'], "Bearer fake-api-key")
-            
-            # Assert that the request contains a GraphQL query
-            self.assertIn("query", kwargs['json'])
+        
+        # Verify a message about processing was printed
+        mock_print.assert_any_call("The latest meeting 'Processing Meeting' is still processing. Transcript not available yet.")
+        
+        # Verify format_transcript was NOT called
+        mock_api.format_transcript.assert_not_called()
 
 if __name__ == '__main__':
     unittest.main()

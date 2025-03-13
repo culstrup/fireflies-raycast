@@ -2,112 +2,114 @@
 
 import os
 import sys
-import requests
 import datetime
 from dateutil import parser as date_parser
-import pyperclip  # pip install pyperclip
+import pyperclip
 import subprocess
 import time
-from dotenv import load_dotenv
-from pathlib import Path
+import logging
+import traceback
+from fireflies_api import FirefliesAPI
 
-# Load environment variables from .env file
-script_dir = os.path.dirname(os.path.abspath(__file__))
-env_path = os.path.join(script_dir, ".env")
-load_dotenv(dotenv_path=env_path)
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger("fireflies_clipboard")
 
-# API endpoint
-GRAPHQL_ENDPOINT = "https://api.fireflies.ai/graphql"
+def setup_clipboard(content):
+    """
+    Copy content to clipboard and optionally paste it.
+    
+    Args:
+        content: Text content to copy to clipboard
+    """
+    try:
+        # Copy to clipboard
+        pyperclip.copy(content)
+        # Add a small delay to ensure the clipboard is updated
+        time.sleep(0.1)
+        
+        # Try to paste, but handle failures gracefully
+        try:
+            # Use AppleScript to simulate cmd+v
+            result = subprocess.run(
+                ['osascript', '-e', 'tell application "System Events" to keystroke "v" using command down'],
+                capture_output=True, text=True
+            )
+            
+            if result.returncode == 0:
+                logger.info("Copied and pasted Fireflies transcript successfully!")
+                print("Copied and pasted Fireflies transcript successfully!")
+            else:
+                logger.warning(f"Failed to paste: {result.stderr}")
+                print(f"Copied Fireflies transcript to clipboard. Paste manually with Cmd+V.")
+        except Exception as e:
+            logger.error(f"Error while pasting: {e}")
+            print(f"Copied Fireflies transcript to clipboard. Paste manually with Cmd+V.")
+    except Exception as e:
+        logger.error(f"Error copying to clipboard: {e}")
+        logger.error(traceback.format_exc())
+        print(f"Error: Failed to copy transcript to clipboard: {str(e)}")
+        sys.exit(1)
 
 def main():
-    # Get API key from environment
-    api_key = os.environ.get("FIREFLIES_API_KEY", "")
-    if not api_key:
-        print("Error: FIREFLIES_API_KEY not set.")
-        sys.exit(1)
-
-    # Query transcripts from the last 7 days.
-    now = datetime.datetime.now(datetime.timezone.utc)
-    from_date_str = (now - datetime.timedelta(days=7)).isoformat() + "Z"
-    to_date_str = now.isoformat() + "Z"
-
-    query = """
-    query MyTranscripts($limit: Int) {
-      transcripts(limit: $limit, mine: true) {
-        id
-        title
-        dateString
-        transcript_url
-        summary {
-          overview
-        }
-        sentences {
-          text
-          raw_text
-          speaker_name
-        }
-      }
-    }
-    """
-
-    variables = {"limit": 5}  # or however many you want to fetch
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}"
-    }
-
-    resp = requests.post(GRAPHQL_ENDPOINT, 
-                         json={"query": query, "variables": variables}, 
-                         headers=headers)
-    if resp.status_code != 200:
-        print(f"Request error: {resp.status_code} - {resp.text}")
-        sys.exit(1)
-
-    data = resp.json()
-    transcripts = data.get("data", {}).get("transcripts", [])
-    if not transcripts:
-        print("No transcripts found.")
-        return
-
-    # Sort by date descending
-    transcripts.sort(key=lambda t: date_parser.isoparse(t["dateString"]), reverse=True)
-    newest = transcripts[0]
-
-    # Build text
-    lines = []
-    lines.append(f"=== {newest['title']} ({newest['dateString']}) ===")
-    
-    overview = newest["summary"].get("overview", "")
-    if overview:
-        lines.append(f"Summary: {overview}\n")
-    
-    lines.append("Transcript:")
-    for s in newest["sentences"]:
-        speaker = s.get("speaker_name", "Unknown")
-        text = s.get("text") or s.get("raw_text") or ""
-        lines.append(f"{speaker}: {text}")
-    
-    final_text = "\n".join(lines)
-    pyperclip.copy(final_text)
-    # Add a small delay to ensure the clipboard is updated
-    time.sleep(0.1)
-    
-    # Try to paste, but handle failures gracefully
+    """Main function to fetch and copy the latest Fireflies transcript."""
     try:
-        # Use AppleScript to simulate cmd+v
-        result = subprocess.run(
-            ['osascript', '-e', 'tell application "System Events" to keystroke "v" using command down'],
-            capture_output=True, text=True
-        )
+        # Initialize Fireflies API
+        api = None
+        try:
+            api = FirefliesAPI()
+        except ValueError as e:
+            print(f"Error: {str(e)}")
+            sys.exit(1)
+            
+        # Safety check
+        if api is None:
+            print("Failed to initialize Fireflies API")
+            sys.exit(1)
         
-        if result.returncode == 0:
-            print("Copied and pasted Fireflies transcript successfully!")
-        else:
-            print(f"Copied Fireflies transcript to clipboard. Paste manually with Cmd+V.")
-            print(f"Error: {result.stderr}")
+        # Get recent transcripts
+        try:
+            transcripts = api.get_recent_transcripts(limit=5)
+        except ValueError as e:
+            print(f"Error fetching transcripts: {str(e)}")
+            sys.exit(1)
+            
+        if not transcripts:
+            print("No transcripts found.")
+            return
+
+        # Sort by date descending
+        try:
+            transcripts.sort(key=lambda t: date_parser.isoparse(t["dateString"]), reverse=True)
+            newest = transcripts[0]
+        except Exception as e:
+            logger.error(f"Error sorting transcripts: {e}")
+            print(f"Error processing transcripts: {str(e)}")
+            sys.exit(1)
+            
+        # Check if the transcript is still processing
+        sentences = newest.get("sentences", [])
+        if not sentences:
+            print(f"The latest meeting '{newest.get('title', 'Unknown')}' is still processing. Transcript not available yet.")
+            return
+            
+        # Format the transcript
+        formatted_text = api.format_transcript(newest)
+        
+        # Copy and optionally paste
+        setup_clipboard(formatted_text)
+        
     except Exception as e:
-        print(f"Copied Fireflies transcript to clipboard. Paste manually with Cmd+V.")
-        print(f"Error: {str(e)}")
+        logger.error(f"Unexpected error: {e}")
+        logger.error(traceback.format_exc())
+        print(f"An unexpected error occurred: {str(e)}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

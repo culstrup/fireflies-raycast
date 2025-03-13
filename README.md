@@ -105,9 +105,11 @@ To enable automatic pasting:
 ## 💡 How It Works
 
 - The scripts use the Fireflies GraphQL API to fetch your transcripts
+- A shared `FirefliesAPI` class handles all API interactions and error handling
 - For Chrome tab fetching, it uses AppleScript to get URLs from Chrome tabs
 - Transcripts are formatted and copied to your clipboard
 - If accessibility permissions are granted, it can automatically paste content
+- Built with robust error handling for API issues, missing transcripts, and processing meetings
 
 ## 📝 Requirements
 

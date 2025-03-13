@@ -3,15 +3,13 @@
 import os
 import sys
 import re
-import requests
 import pyperclip
 import subprocess
 import time
-import traceback
 import logging
+import traceback
 import argparse
-from dotenv import load_dotenv
-from pathlib import Path
+from fireflies_api import FirefliesAPI
 
 # Setup logging
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -27,29 +25,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger("fireflies_script")
 
-# Load environment variables from .env file
-try:
-    env_path = os.path.join(script_dir, ".env")
-    logger.info(f"Looking for .env file at: {env_path}")
-    if not os.path.exists(env_path):
-        logger.error(f".env file not found at {env_path}")
-    load_dotenv(dotenv_path=env_path)
-    logger.info("Environment variables loaded")
-except Exception as e:
-    logger.error(f"Error loading .env file: {e}")
-    logger.error(traceback.format_exc())
-
-# Configuration
-FIREFLIES_API_KEY = os.environ.get("FIREFLIES_API_KEY", "")
-if not FIREFLIES_API_KEY:
-    logger.error("FIREFLIES_API_KEY environment variable not set")
-else:
-    logger.info("API key loaded successfully")
-    
-GRAPHQL_ENDPOINT = "https://api.fireflies.ai/graphql"
-
 def get_chrome_tabs():
-    """Get URLs from all open Chrome tabs"""
+    """
+    Get URLs from all open Chrome tabs that contain Fireflies.ai URLs.
+    
+    Returns:
+        List of Fireflies URLs found in Chrome tabs
+    """
     try:
         logger.info("Getting Chrome tabs with Fireflies URLs")
         apple_script = '''
@@ -71,7 +53,7 @@ def get_chrome_tabs():
         
         if result.returncode != 0:
             logger.error(f"AppleScript error: {result.stderr}")
-            return []
+            raise RuntimeError(f"Failed to access Chrome tabs: {result.stderr}")
             
         urls = result.stdout.strip().split(", ")
         filtered_urls = [url for url in urls if url]
@@ -81,10 +63,18 @@ def get_chrome_tabs():
     except Exception as e:
         logger.error(f"Error getting Chrome tabs: {e}")
         logger.error(traceback.format_exc())
-        return []
+        raise RuntimeError(f"Failed to get Chrome tabs: {str(e)}")
 
 def extract_transcript_ids(urls):
-    """Extract transcript IDs from Fireflies URLs"""
+    """
+    Extract transcript IDs from Fireflies URLs.
+    
+    Args:
+        urls: List of Fireflies.ai URLs
+        
+    Returns:
+        List of transcript IDs
+    """
     try:
         logger.info("Extracting transcript IDs from URLs")
         transcript_ids = []
@@ -103,102 +93,15 @@ def extract_transcript_ids(urls):
     except Exception as e:
         logger.error(f"Error extracting transcript IDs: {e}")
         logger.error(traceback.format_exc())
-        return []
-
-def fetch_transcript(transcript_id):
-    """Fetch transcript details using the Fireflies GraphQL API"""
-    try:
-        logger.info(f"Fetching transcript with ID: {transcript_id}")
-        if not FIREFLIES_API_KEY:
-            logger.error("Error: FIREFLIES_API_KEY not set.")
-            return None
-
-        query = """
-        query GetTranscript($id: String!) {
-          transcript(id: $id) {
-            id
-            title
-            dateString
-            transcript_url
-            summary {
-              overview
-            }
-            sentences {
-              text
-              raw_text
-              speaker_name
-            }
-          }
-        }
-        """
-
-        variables = {"id": transcript_id}
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {FIREFLIES_API_KEY}"
-        }
-
-        logger.debug(f"Sending GraphQL request for transcript: {transcript_id}")
-        resp = requests.post(GRAPHQL_ENDPOINT, 
-                            json={"query": query, "variables": variables}, 
-                            headers=headers)
-        
-        if resp.status_code != 200:
-            logger.error(f"Request error: {resp.status_code} - {resp.text}")
-            return None
-
-        data = resp.json()
-        transcript = data.get("data", {}).get("transcript")
-        
-        if not transcript:
-            logger.error(f"No transcript data found in response: {data}")
-            return None
-            
-        logger.info(f"Successfully fetched transcript: {transcript.get('title', 'Untitled')}")
-        return transcript
-    except Exception as e:
-        logger.error(f"Error fetching transcript {transcript_id}: {e}")
-        logger.error(traceback.format_exc())
-        return None
-
-def format_transcript(transcript):
-    """Format transcript data as readable text"""
-    try:
-        logger.info(f"Formatting transcript: {transcript.get('title', 'Untitled')}")
-        if not transcript:
-            logger.warning("Attempted to format empty transcript")
-            return ""
-            
-        lines = []
-        lines.append(f"=== {transcript['title']} ({transcript['dateString']}) ===")
-        
-        # Safely handle missing summary field
-        if transcript.get("summary") is not None:
-            overview = transcript["summary"].get("overview", "")
-            if overview:
-                lines.append(f"Summary: {overview}\n")
-        else:
-            logger.warning(f"No summary found for transcript: {transcript.get('title')}")
-        
-        sentences = transcript.get("sentences", [])
-        lines.append("Transcript:")
-        logger.info(f"Processing {len(sentences)} sentences")
-        
-        for s in sentences:
-            speaker = s.get("speaker_name", "Unknown")
-            text = s.get("text") or s.get("raw_text") or ""
-            lines.append(f"{speaker}: {text}")
-        
-        result = "\n".join(lines)
-        logger.info(f"Formatted transcript with {len(lines)} lines")
-        return result
-    except Exception as e:
-        logger.error(f"Error formatting transcript: {e}")
-        logger.error(traceback.format_exc())
-        return f"Error formatting transcript: {str(e)}"
+        raise RuntimeError(f"Failed to extract transcript IDs: {str(e)}")
 
 def attempt_paste():
-    """Try to paste the content using AppleScript"""
+    """
+    Try to paste the content using AppleScript.
+    
+    Returns:
+        Boolean indicating success
+    """
     try:
         logger.info("Attempting to paste content with AppleScript")
         paste_result = subprocess.run(
@@ -215,6 +118,7 @@ def attempt_paste():
         return False
 
 def main():
+    """Main function to fetch Fireflies transcripts from Chrome tabs."""
     try:
         # Parse command line arguments
         parser = argparse.ArgumentParser(description='Fetch Fireflies transcripts from Chrome tabs')
@@ -224,30 +128,52 @@ def main():
         logger.info("Script started")
         
         # Get all Chrome tabs with Fireflies URLs
-        urls = get_chrome_tabs()
-        if not urls:
-            logger.error("No Fireflies tabs found in Chrome.")
-            print("No Fireflies tabs found in Chrome.")
+        try:
+            urls = get_chrome_tabs()
+            if not urls:
+                logger.error("No Fireflies tabs found in Chrome.")
+                print("No Fireflies tabs found in Chrome.")
+                sys.exit(1)
+        except RuntimeError as e:
+            print(f"Error: {str(e)}")
             sys.exit(1)
         
         # Extract transcript IDs
-        transcript_ids = extract_transcript_ids(urls)
-        if not transcript_ids:
-            logger.error("No valid Fireflies transcript IDs found in Chrome tabs.")
-            print("No valid Fireflies transcript IDs found in Chrome tabs.")
+        try:
+            transcript_ids = extract_transcript_ids(urls)
+            if not transcript_ids:
+                logger.error("No valid Fireflies transcript IDs found in Chrome tabs.")
+                print("No valid Fireflies transcript IDs found in Chrome tabs.")
+                sys.exit(1)
+        except RuntimeError as e:
+            print(f"Error: {str(e)}")
             sys.exit(1)
         
         logger.info(f"Found {len(transcript_ids)} Fireflies transcripts in Chrome tabs.")
         print(f"Found {len(transcript_ids)} Fireflies transcripts in Chrome tabs.")
         
+        # Initialize Fireflies API
+        try:
+            api = FirefliesAPI()
+        except ValueError as e:
+            print(f"Error: {str(e)}")
+            sys.exit(1)
+        
         # Fetch and format each transcript
         all_transcripts = []
         for transcript_id in transcript_ids:
             logger.info(f"Processing transcript ID: {transcript_id}")
-            transcript = fetch_transcript(transcript_id)
-            if transcript:
-                formatted = format_transcript(transcript)
-                all_transcripts.append(formatted)
+            try:
+                transcript = api.get_transcript_by_id(transcript_id)
+                if transcript:
+                    formatted = api.format_transcript(transcript)
+                    all_transcripts.append(formatted)
+                else:
+                    logger.warning(f"Could not fetch transcript with ID: {transcript_id}")
+                    print(f"Warning: Could not fetch transcript with ID: {transcript_id}")
+            except ValueError as e:
+                logger.error(f"Error fetching transcript {transcript_id}: {e}")
+                print(f"Error fetching transcript {transcript_id}: {str(e)}")
         
         if not all_transcripts:
             logger.error("Failed to fetch any transcripts")
@@ -260,10 +186,15 @@ def main():
         
         # Copy to clipboard
         logger.info("Copying to clipboard")
-        pyperclip.copy(final_text)
-        
-        # Add a small delay to ensure the clipboard is updated
-        time.sleep(0.1)
+        try:
+            pyperclip.copy(final_text)
+            
+            # Add a small delay to ensure the clipboard is updated
+            time.sleep(0.1)
+        except Exception as e:
+            logger.error(f"Error copying to clipboard: {e}")
+            print(f"Error: Failed to copy to clipboard: {str(e)}")
+            sys.exit(1)
         
         # Try to paste if requested
         paste_success = False

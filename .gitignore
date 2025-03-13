@@ -1,0 +1,24 @@
+# Environment and local config
+.env
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs
+debug.log
+*.log
+
+# macOS
+.DS_Store
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-*
+
+# Distribution
+dist/
+build/
+*.zip

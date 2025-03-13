@@ -1,0 +1,4 @@
+requests>=2.25.0
+pyperclip>=1.8.0
+python-dotenv>=0.15.0
+python-dateutil>=2.8.0

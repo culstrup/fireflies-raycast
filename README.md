@@ -135,4 +135,6 @@ Your support helps maintain and improve this tool!
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License by GSD at Work LLC - see the [LICENSE](LICENSE) file for details. 
+
+Feel free to use, modify, and distribute this code however you want - all we ask is that you share how it helps you!

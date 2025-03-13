@@ -122,6 +122,25 @@ If you experience issues:
 - Ensure your API key is correct in the `.env` file
 - Verify that you've granted accessibility permissions to Raycast
 
+## 🧪 Testing
+
+FlyCast includes unit tests to ensure everything works as expected:
+
+```bash
+# Run all tests
+./run_tests.sh
+```
+
+## 🛡️ Security
+
+FlyCast takes security seriously, especially regarding your Fireflies API key:
+
+- API keys are stored only in your local `.env` file
+- The `.env` file is excluded from git via `.gitignore`
+- Never share your API key or commit it to a repository
+
+For more details, see our [Security Policy](SECURITY.md).
+
 ## ❤️ Support This Project
 
 If you find FlyCast useful, consider supporting its development:

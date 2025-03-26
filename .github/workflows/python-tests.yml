@@ -1,6 +1,6 @@
-name: Test CI Workflow Patch
+name: Python Tests
 
-# This file should be added to .github/workflows/ to fix the hanging tests in CI
+# Updated workflow to fix hanging tests in CI
 
 on:
   pull_request:

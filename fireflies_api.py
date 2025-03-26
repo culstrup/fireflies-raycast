@@ -5,6 +5,7 @@ import sys
 import requests
 import logging
 import traceback
+import time
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -70,14 +71,15 @@ class FirefliesAPI:
             logger.error(traceback.format_exc())
             return None
 
-    def execute_query(self, query, variables=None, timeout=8):
+    def execute_query(self, query, variables=None, timeout=60):
         """
         Execute a GraphQL query against the Fireflies API.
         
         Args:
             query: The GraphQL query string
             variables: Optional dictionary of variables for the query
-            timeout: Timeout in seconds for the API request (default: 8)
+            timeout: Timeout in seconds for the API request (default: 60)
+                    Set to 60 seconds for maximum reliability - ensures we get all transcripts
             
         Returns:
             The JSON response data or None if the request failed

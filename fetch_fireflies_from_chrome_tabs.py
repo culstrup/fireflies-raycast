@@ -146,7 +146,7 @@ def fetch_transcripts_parallel(transcript_ids, api):
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Create a dictionary mapping futures to transcript IDs
             future_to_id = {
-                executor.submit(api.get_transcript_by_id, transcript_id, timeout=8): transcript_id
+                executor.submit(api.get_transcript_by_id, transcript_id, timeout=60): transcript_id
                 for transcript_id in transcript_ids
             }
             

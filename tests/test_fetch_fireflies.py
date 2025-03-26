@@ -68,29 +68,34 @@ class TestFetchFireflies(unittest.TestCase):
         # Mock format_transcript to return a simple string
         mock_api.format_transcript.return_value = "Formatted transcript"
         
-        # Patch the functions that would normally find transcripts
-        with patch('fetch_fireflies_from_chrome_tabs.get_chrome_tabs', return_value=["url1"]):
-            with patch('fetch_fireflies_from_chrome_tabs.extract_transcript_ids', return_value=["id1"]):
-                # Patch pyperclip.copy to check what gets copied
-                with patch('pyperclip.copy') as mock_copy:
-                    # Run the main function with sys.exit and print patched
-                    with patch('sys.exit'):
-                        with patch('builtins.print'):
-                            fetch_fireflies_from_chrome_tabs.main()
-                    
-                    # Verify API was initialized
-                    mock_api_class.assert_called_once()
-                    
-                    # Verify get_transcript_by_id was called
-                    mock_api.get_transcript_by_id.assert_called_with("id1")
-                    
-                    # Verify format_transcript was called
-                    mock_api.format_transcript.assert_called_with(transcript)
-                    
-                    # Verify something was copied to clipboard (with newlines added)
-                    mock_copy.assert_called_once()
-                    args = mock_copy.call_args[0][0]
-                    self.assertIn("Formatted transcript", args)
+        # Also mock fetch_transcripts_parallel to avoid thread pool issues
+        with patch('fetch_fireflies_from_chrome_tabs.fetch_transcripts_parallel') as mock_fetch_parallel:
+            # Make the mocked function return a dictionary with our transcript
+            mock_fetch_parallel.return_value = {"id1": transcript}
+            
+            # Patch the functions that would normally find transcripts
+            with patch('fetch_fireflies_from_chrome_tabs.get_chrome_tabs', return_value=["url1"]):
+                with patch('fetch_fireflies_from_chrome_tabs.extract_transcript_ids', return_value=["id1"]):
+                    # Patch pyperclip.copy to check what gets copied
+                    with patch('pyperclip.copy') as mock_copy:
+                        # Run the main function with sys.exit and print patched
+                        with patch('sys.exit'):
+                            with patch('builtins.print'):
+                                fetch_fireflies_from_chrome_tabs.main()
+                        
+                        # Verify API was initialized
+                        mock_api_class.assert_called_once()
+                        
+                        # Verify parallel fetch was called with the right arguments
+                        mock_fetch_parallel.assert_called_once_with(["id1"], mock_api)
+                        
+                        # Verify format_transcript was called
+                        mock_api.format_transcript.assert_called_with(transcript)
+                        
+                        # Verify something was copied to clipboard (with newlines added)
+                        mock_copy.assert_called_once()
+                        args = mock_copy.call_args[0][0]
+                        self.assertIn("Formatted transcript", args)
 
 if __name__ == '__main__':
     unittest.main()

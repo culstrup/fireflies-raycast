@@ -63,13 +63,14 @@ class FirefliesAPI:
             logger.error(traceback.format_exc())
             return None
 
-    def execute_query(self, query, variables=None):
+    def execute_query(self, query, variables=None, timeout=10):
         """
         Execute a GraphQL query against the Fireflies API.
         
         Args:
             query: The GraphQL query string
             variables: Optional dictionary of variables for the query
+            timeout: Timeout in seconds for the API request (default: 10)
             
         Returns:
             The JSON response data or None if the request failed
@@ -92,7 +93,8 @@ class FirefliesAPI:
             resp = requests.post(
                 GRAPHQL_ENDPOINT, 
                 json={"query": query, "variables": variables}, 
-                headers=headers
+                headers=headers,
+                timeout=timeout
             )
             
             if resp.status_code != 200:

@@ -117,9 +117,62 @@ def attempt_paste():
         logger.error(f"Exception during paste attempt: {e}")
         return False
 
+def fetch_transcripts_parallel(transcript_ids, api):
+    """
+    Fetch multiple transcripts in parallel using concurrent.futures.
+    
+    Args:
+        transcript_ids: List of transcript IDs to fetch in the specified order
+        api: Initialized FirefliesAPI instance
+        
+    Returns:
+        Dictionary mapping transcript IDs to their transcript data
+    """
+    if not transcript_ids:
+        return {}
+    
+    try:
+        import concurrent.futures
+        
+        logger.info(f"Fetching {len(transcript_ids)} transcripts in parallel")
+        start_time = time.time()
+        
+        transcripts_dict = {}
+        
+        # Use ThreadPoolExecutor to fetch transcripts in parallel
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            # Create a dictionary mapping futures to transcript IDs
+            future_to_id = {
+                executor.submit(api.get_transcript_by_id, transcript_id): transcript_id
+                for transcript_id in transcript_ids
+            }
+            
+            # Process results as they complete
+            for future in concurrent.futures.as_completed(future_to_id):
+                transcript_id = future_to_id[future]
+                try:
+                    transcript = future.result()
+                    if transcript:
+                        transcripts_dict[transcript_id] = transcript
+                        logger.debug(f"Successfully fetched transcript: {transcript_id}")
+                    else:
+                        logger.warning(f"Could not fetch transcript: {transcript_id}")
+                except Exception as e:
+                    logger.error(f"Error fetching transcript {transcript_id}: {e}")
+        
+        logger.info(f"Fetched {len(transcripts_dict)} transcripts in {time.time() - start_time:.2f}s")
+        return transcripts_dict
+    
+    except Exception as e:
+        logger.error(f"Error fetching transcripts in parallel: {e}")
+        logger.error(traceback.format_exc())
+        return {}
+
 def main():
     """Main function to fetch Fireflies transcripts from Chrome tabs."""
     try:
+        start_time = time.time()
+        
         # Parse command line arguments
         parser = argparse.ArgumentParser(description='Fetch Fireflies transcripts from Chrome tabs')
         parser.add_argument('--paste', action='store_true', help='Attempt to automatically paste content')
@@ -159,21 +212,19 @@ def main():
             print(f"Error: {str(e)}")
             sys.exit(1)
         
-        # Fetch and format each transcript
+        # Fetch transcripts in parallel
+        transcripts_dict = fetch_transcripts_parallel(transcript_ids, api)
+        
+        # Process transcripts in the original order
         all_transcripts = []
         for transcript_id in transcript_ids:
-            logger.info(f"Processing transcript ID: {transcript_id}")
-            try:
-                transcript = api.get_transcript_by_id(transcript_id)
-                if transcript:
-                    formatted = api.format_transcript(transcript)
-                    all_transcripts.append(formatted)
-                else:
-                    logger.warning(f"Could not fetch transcript with ID: {transcript_id}")
-                    print(f"Warning: Could not fetch transcript with ID: {transcript_id}")
-            except ValueError as e:
-                logger.error(f"Error fetching transcript {transcript_id}: {e}")
-                print(f"Error fetching transcript {transcript_id}: {str(e)}")
+            if transcript_id in transcripts_dict:
+                logger.info(f"Formatting transcript ID: {transcript_id}")
+                formatted = api.format_transcript(transcripts_dict[transcript_id])
+                all_transcripts.append(formatted)
+            else:
+                logger.warning(f"Could not fetch transcript with ID: {transcript_id}")
+                print(f"Warning: Could not fetch transcript with ID: {transcript_id}")
         
         if not all_transcripts:
             logger.error("Failed to fetch any transcripts")
@@ -201,13 +252,15 @@ def main():
         if args.paste:
             paste_success = attempt_paste()
             
-        logger.info(f"Script completed successfully, copied {len(all_transcripts)} transcripts to clipboard")
+        end_time = time.time()
+        total_time = end_time - start_time
+        logger.info(f"Script completed in {total_time:.2f} seconds, copied {len(all_transcripts)} transcripts to clipboard")
         
         if paste_success:
-            print(f"Copied and pasted {len(all_transcripts)} Fireflies transcripts successfully.")
+            print(f"Copied and pasted {len(all_transcripts)} Fireflies transcripts successfully in {total_time:.2f} seconds.")
         else:
             # If paste didn't work, it's still in the clipboard
-            print(f"Copied {len(all_transcripts)} Fireflies transcripts to clipboard. Paste manually with Cmd+V.")
+            print(f"Copied {len(all_transcripts)} Fireflies transcripts to clipboard in {total_time:.2f} seconds. Paste manually with Cmd+V.")
             
     except Exception as e:
         logger.error(f"Unexpected error in main function: {e}")

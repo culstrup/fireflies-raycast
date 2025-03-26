@@ -15,5 +15,11 @@
 # @raycast.authorURL https://raycast.com/christian_ulstrup
 
 # Setup the environment and run the script
+echo "Starting Fireflies transcript fetch..."
 source "$(dirname "$0")/.venv/bin/activate"
-python3 "$(dirname "$0")/fetch_fireflies_from_chrome_tabs.py" --paste
+
+# Run with debug mode to provide more visibility
+python3 "$(dirname "$0")/fetch_fireflies_from_chrome_tabs.py" --paste --debug
+
+# Show notification when complete
+echo "Fireflies transcript fetch completed!"

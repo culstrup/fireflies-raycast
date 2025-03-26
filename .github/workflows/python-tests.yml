@@ -27,7 +27,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pytest
+        pip install pytest pytest-timeout pytest-cov
     
     - name: Create dummy env for testing
       run: |
@@ -43,4 +43,5 @@ jobs:
         FIREFLIES_API_KEY: "dummy-test-key-for-ci"
       run: |
         # Use pytest instead of unittest for better isolation
-        python -m pytest tests/
+        # Add timeouts and verbosity to diagnose hanging tests
+        python -m pytest tests/ -v --timeout=30

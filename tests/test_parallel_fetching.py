@@ -119,6 +119,8 @@ class TestParallelFetching(unittest.TestCase):
         # Create mock executor and API
         mock_executor = MagicMock()
         mock_executor_class.return_value.__enter__.return_value = mock_executor
+        # Make sure the mock returns immediately
+        mock_executor_class.return_value.__exit__ = MagicMock(return_value=None)
         mock_api = MagicMock()
         
         # Test with different transcript counts

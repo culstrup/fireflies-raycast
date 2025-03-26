@@ -53,40 +53,52 @@ class TestFirefliesAPI(unittest.TestCase):
         with self.assertRaises(ValueError):
             FirefliesAPI()
             
-    @patch('fireflies_api.requests.post')
-    def test_execute_query_success(self, mock_post):
+    # Make sure to patch SESSION post, not requests.post directly
+    @patch('fireflies_api.requests.Session')
+    def test_execute_query_success(self, mock_session_class):
         """Test successful execution of a GraphQL query."""
         # Mock successful response
+        mock_session = MagicMock()
+        mock_session_class.return_value = mock_session
+        
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
             "data": {"some_field": "test_value"}
         }
-        mock_post.return_value = mock_response
+        mock_session.post.return_value = mock_response
         
         api = FirefliesAPI(api_key="test_key")
         result = api.execute_query("query { test }")
         
         # Verify request was made correctly
-        mock_post.assert_called_once()
+        mock_session.post.assert_called_once()
         self.assertEqual(result, {"some_field": "test_value"})
         
-    @patch('fireflies_api.requests.post')
-    def test_execute_query_http_error(self, mock_post):
+    @patch('fireflies_api.requests.Session')
+    def test_execute_query_http_error(self, mock_session_class):
         """Test handling of HTTP errors in query execution."""
+        # Mock session
+        mock_session = MagicMock()
+        mock_session_class.return_value = mock_session
+        
         # Mock error response
         mock_response = MagicMock()
         mock_response.status_code = 403
         mock_response.text = "Forbidden"
-        mock_post.return_value = mock_response
+        mock_session.post.return_value = mock_response
         
         api = FirefliesAPI(api_key="test_key")
         with self.assertRaises(ValueError):
             api.execute_query("query { test }")
             
-    @patch('fireflies_api.requests.post')
-    def test_execute_query_graphql_error(self, mock_post):
+    @patch('fireflies_api.requests.Session')
+    def test_execute_query_graphql_error(self, mock_session_class):
         """Test handling of GraphQL errors in query response."""
+        # Mock session
+        mock_session = MagicMock()
+        mock_session_class.return_value = mock_session
+        
         # Mock response with GraphQL errors
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -94,7 +106,7 @@ class TestFirefliesAPI(unittest.TestCase):
             "errors": [{"message": "Field does not exist"}],
             "data": None
         }
-        mock_post.return_value = mock_response
+        mock_session.post.return_value = mock_response
         
         api = FirefliesAPI(api_key="test_key")
         with self.assertRaises(ValueError):

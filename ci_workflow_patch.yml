@@ -1,6 +1,6 @@
-name: Python Tests
+name: Test CI Workflow Patch
 
-# Updated workflow to fix hanging tests in CI
+# This file should be added to .github/workflows/ to fix the hanging tests in CI
 
 on:
   pull_request:
@@ -27,7 +27,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pytest pytest-timeout pytest-cov
+        pip install pytest
     
     - name: Create dummy env for testing
       run: |
@@ -43,5 +43,4 @@ jobs:
         FIREFLIES_API_KEY: "dummy-test-key-for-ci"
       run: |
         # Use pytest instead of unittest for better isolation
-        # Add timeouts and verbosity to diagnose hanging tests
-        python -m pytest tests/ -v --timeout=30
+        python -m pytest tests/

@@ -110,7 +110,8 @@ class TestParallelFetching(unittest.TestCase):
         self.assertNotIn("id3", result)  # Returned None
     
     @patch('concurrent.futures.ThreadPoolExecutor')
-    def test_worker_count(self, mock_executor_class):
+    @patch('concurrent.futures.as_completed')
+    def test_worker_count(self, mock_as_completed, mock_executor_class):
         """Test worker count calculation"""
         
         # Import the module
@@ -119,6 +120,12 @@ class TestParallelFetching(unittest.TestCase):
         # Create mock executor and API
         mock_executor = MagicMock()
         mock_executor_class.return_value.__enter__.return_value = mock_executor
+        mock_executor_class.return_value.__exit__ = MagicMock(return_value=None)
+        
+        # Mock the as_completed function to return an empty list immediately
+        # This prevents the function from waiting for future results
+        mock_as_completed.return_value = []
+        
         mock_api = MagicMock()
         
         # Test with different transcript counts
@@ -134,8 +141,11 @@ class TestParallelFetching(unittest.TestCase):
             # Reset mock
             mock_executor_class.reset_mock()
             
-            # Run with this number of transcripts
-            fetch_transcripts_parallel(transcript_ids, mock_api)
+            # Run with this number of transcripts - will exit early due to mock
+            result = fetch_transcripts_parallel(transcript_ids, mock_api)
+            
+            # Verify it's an empty dict (as expected with our mock)
+            self.assertEqual(result, {})
             
             # Verify correct worker count
             mock_executor_class.assert_called_once_with(max_workers=expected_workers)

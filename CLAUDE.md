@@ -58,3 +58,30 @@ echo "" > debug.log
 - [ ] Add support for other browsers
 - [ ] Improve error messages
 - [ ] Add optional transcript formatting options
+
+## Performance Notes
+
+If script performance seems slow:
+
+```bash
+# Run with debug mode to see detailed progress
+python fetch_fireflies_from_chrome_tabs.py --debug
+
+# Check logs for slow API responses
+tail -50 debug.log | grep "took"
+```
+
+The script uses parallel fetching with connection pooling to optimize performance. The main bottleneck is typically the Fireflies API response time, which can vary significantly (from 1s to 60s per transcript).
+
+## CI Testing Notes
+
+Tests use extensive mocking to prevent real network connections:
+
+- Socket-level patching via sitecustomize.py
+- Session and ThreadPoolExecutor mocking
+- Timeouts to prevent infinite hanging
+
+If tests are failing in CI, check:
+- Mock configuration for any new API features
+- Network isolation (tests shouldn't make real API calls)
+- Concurrent execution handling

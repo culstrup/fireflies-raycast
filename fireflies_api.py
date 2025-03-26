@@ -95,11 +95,16 @@ class FirefliesAPI:
             logger.debug(f"Executing GraphQL query with variables: {variables}")
             
             # Use the session for connection pooling
+            # Display timeout info
+            print(f"FlyCast: Sending API request with {timeout}s timeout...")
+            
             resp = self.session.post(
                 GRAPHQL_ENDPOINT, 
                 json={"query": query, "variables": variables},
                 timeout=timeout
             )
+            
+            print(f"FlyCast: Received API response with status code {resp.status_code}")
             
             if resp.status_code != 200:
                 error_message = f"API request failed with status {resp.status_code}"
@@ -219,21 +224,26 @@ class FirefliesAPI:
         
         try:
             start_time = time.time()
+            print(f"FlyCast: Fetching transcript {transcript_id}...")
             data = self.execute_query(query, variables, timeout=timeout)
             if not data:
                 logger.warning(f"No data returned for transcript ID: {transcript_id}")
+                print(f"FlyCast: No data returned for transcript ID: {transcript_id}")
                 return None
                 
             transcript = data.get("transcript")
             if not transcript:
                 logger.warning(f"Transcript not found with ID: {transcript_id}")
+                print(f"FlyCast: Transcript not found with ID: {transcript_id}")
                 return None
             
             fetch_time = time.time() - start_time
             logger.debug(f"API fetch for transcript {transcript_id} took {fetch_time:.2f}s")
+            print(f"FlyCast: Fetched transcript {transcript_id} in {fetch_time:.2f}s")
             return transcript
         except Exception as e:
             logger.error(f"Error fetching transcript {transcript_id}: {e}")
+            print(f"FlyCast: Error fetching transcript {transcript_id}: {e}")
             raise ValueError(f"Failed to fetch transcript {transcript_id}: {str(e)}")
             
     def format_transcript(self, transcript):

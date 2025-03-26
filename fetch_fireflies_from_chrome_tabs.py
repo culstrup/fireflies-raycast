@@ -180,47 +180,63 @@ def main():
         # Parse command line arguments
         parser = argparse.ArgumentParser(description='Fetch Fireflies transcripts from Chrome tabs')
         parser.add_argument('--paste', action='store_true', help='Attempt to automatically paste content')
+        parser.add_argument('--debug', action='store_true', help='Enable extra debug output')
         args = parser.parse_args()
         
+        # Set debug flag for more verbose output
+        if args.debug:
+            logger.setLevel(logging.DEBUG)
+            # Print output directly to console as well
+            for handler in logger.handlers:
+                if isinstance(handler, logging.StreamHandler):
+                    handler.setLevel(logging.DEBUG)
+        
         logger.info("Script started")
+        print("FlyCast: Script started")
         
         # Get all Chrome tabs with Fireflies URLs
         try:
+            print("FlyCast: Checking Chrome tabs...")
             urls = get_chrome_tabs()
             if not urls:
                 logger.error("No Fireflies tabs found in Chrome.")
-                print("No Fireflies tabs found in Chrome.")
+                print("FlyCast: No Fireflies tabs found in Chrome.")
                 sys.exit(1)
         except RuntimeError as e:
-            print(f"Error: {str(e)}")
+            print(f"FlyCast Error: {str(e)}")
             sys.exit(1)
         
         # Extract transcript IDs
         try:
+            print("FlyCast: Extracting transcript IDs...")
             transcript_ids = extract_transcript_ids(urls)
             if not transcript_ids:
                 logger.error("No valid Fireflies transcript IDs found in Chrome tabs.")
-                print("No valid Fireflies transcript IDs found in Chrome tabs.")
+                print("FlyCast: No valid Fireflies transcript IDs found in Chrome tabs.")
                 sys.exit(1)
         except RuntimeError as e:
-            print(f"Error: {str(e)}")
+            print(f"FlyCast Error: {str(e)}")
             sys.exit(1)
         
         logger.info(f"Found {len(transcript_ids)} Fireflies transcripts in Chrome tabs.")
-        print(f"Found {len(transcript_ids)} Fireflies transcripts in Chrome tabs.")
+        print(f"FlyCast: Found {len(transcript_ids)} Fireflies transcripts in Chrome tabs.")
         
         # Initialize Fireflies API
         try:
+            print("FlyCast: Initializing API...")
             api = FirefliesAPI()
         except ValueError as e:
-            print(f"Error: {str(e)}")
+            print(f"FlyCast Error: {str(e)}")
             sys.exit(1)
         
         # Fetch transcripts in parallel
+        print(f"FlyCast: Fetching {len(transcript_ids)} transcripts (this may take a moment)...")
         transcripts_dict = fetch_transcripts_parallel(transcript_ids, api)
+        print(f"FlyCast: Successfully retrieved {len(transcripts_dict)} transcripts")
         
         # Process transcripts in the original order (optimize formatting)
         logger.info("Formatting transcripts")
+        print("FlyCast: Formatting transcripts...")
         format_start_time = time.time()
         
         all_transcripts = []
@@ -230,21 +246,23 @@ def main():
                 all_transcripts.append(formatted)
             else:
                 logger.warning(f"Could not fetch transcript with ID: {transcript_id}")
-                print(f"Warning: Could not fetch transcript with ID: {transcript_id}")
+                print(f"FlyCast: Warning: Could not fetch transcript with ID: {transcript_id}")
                 
         format_time = time.time() - format_start_time
         logger.info(f"Formatted {len(all_transcripts)} transcripts in {format_time:.2f}s")
         
         if not all_transcripts:
             logger.error("Failed to fetch any transcripts")
-            print("Failed to fetch any transcripts")
+            print("FlyCast: Failed to fetch any transcripts")
             sys.exit(1)
             
         # Combine all transcripts
+        print("FlyCast: Combining transcripts...")
         final_text = "\n\n" + "\n\n".join(all_transcripts)
         logger.info(f"Combined {len(all_transcripts)} transcripts, total size: {len(final_text)} characters")
         
         # Copy to clipboard
+        print("FlyCast: Copying to clipboard...")
         logger.info("Copying to clipboard")
         try:
             pyperclip.copy(final_text)
@@ -253,12 +271,13 @@ def main():
             time.sleep(0.1)
         except Exception as e:
             logger.error(f"Error copying to clipboard: {e}")
-            print(f"Error: Failed to copy to clipboard: {str(e)}")
+            print(f"FlyCast Error: Failed to copy to clipboard: {str(e)}")
             sys.exit(1)
         
         # Try to paste if requested
         paste_success = False
         if args.paste:
+            print("FlyCast: Attempting to paste...")
             paste_success = attempt_paste()
             
         end_time = time.time()
@@ -266,10 +285,10 @@ def main():
         logger.info(f"Script completed in {total_time:.2f} seconds, copied {len(all_transcripts)} transcripts to clipboard")
         
         if paste_success:
-            print(f"Copied and pasted {len(all_transcripts)} Fireflies transcripts successfully in {total_time:.2f} seconds.")
+            print(f"FlyCast: Copied and pasted {len(all_transcripts)} Fireflies transcripts successfully in {total_time:.2f} seconds.")
         else:
             # If paste didn't work, it's still in the clipboard
-            print(f"Copied {len(all_transcripts)} Fireflies transcripts to clipboard in {total_time:.2f} seconds. Paste manually with Cmd+V.")
+            print(f"FlyCast: Copied {len(all_transcripts)} Fireflies transcripts to clipboard in {total_time:.2f} seconds. Paste manually with Cmd+V.")
             
     except Exception as e:
         logger.error(f"Unexpected error in main function: {e}")

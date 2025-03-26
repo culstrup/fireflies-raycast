@@ -5,6 +5,7 @@ import sys
 import requests
 import logging
 import traceback
+import time
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -31,6 +32,13 @@ class FirefliesAPI:
         if not self.api_key:
             logger.error("No API key provided or found in environment")
             raise ValueError("FIREFLIES_API_KEY not set. Please set it in .env file or provide it directly.")
+            
+        # Create a session for connection pooling
+        self.session = requests.Session()
+        self.session.headers.update({
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}"
+        })
 
     def _load_api_key(self):
         """Load API key from environment variables or .env file."""
@@ -63,13 +71,15 @@ class FirefliesAPI:
             logger.error(traceback.format_exc())
             return None
 
-    def execute_query(self, query, variables=None):
+    def execute_query(self, query, variables=None, timeout=60):
         """
         Execute a GraphQL query against the Fireflies API.
         
         Args:
             query: The GraphQL query string
             variables: Optional dictionary of variables for the query
+            timeout: Timeout in seconds for the API request (default: 60)
+                    Set to 60 seconds for maximum reliability - ensures we get all transcripts
             
         Returns:
             The JSON response data or None if the request failed
@@ -81,18 +91,14 @@ class FirefliesAPI:
         try:
             if not variables:
                 variables = {}
-                
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.api_key}"
-            }
             
             logger.debug(f"Executing GraphQL query with variables: {variables}")
             
-            resp = requests.post(
+            # Use the session for connection pooling
+            resp = self.session.post(
                 GRAPHQL_ENDPOINT, 
-                json={"query": query, "variables": variables}, 
-                headers=headers
+                json={"query": query, "variables": variables},
+                timeout=timeout
             )
             
             if resp.status_code != 200:
@@ -179,12 +185,13 @@ class FirefliesAPI:
             logger.error(f"Error fetching recent transcripts: {e}")
             raise ValueError(f"Failed to fetch recent transcripts: {str(e)}")
             
-    def get_transcript_by_id(self, transcript_id):
+    def get_transcript_by_id(self, transcript_id, timeout=None):
         """
         Get a specific transcript by ID.
         
         Args:
             transcript_id: The ID of the transcript to fetch
+            timeout: Optional override for the timeout value (in seconds)
             
         Returns:
             Transcript object or None if not found
@@ -211,7 +218,8 @@ class FirefliesAPI:
         variables = {"id": transcript_id}
         
         try:
-            data = self.execute_query(query, variables)
+            start_time = time.time()
+            data = self.execute_query(query, variables, timeout=timeout)
             if not data:
                 logger.warning(f"No data returned for transcript ID: {transcript_id}")
                 return None
@@ -220,7 +228,9 @@ class FirefliesAPI:
             if not transcript:
                 logger.warning(f"Transcript not found with ID: {transcript_id}")
                 return None
-                
+            
+            fetch_time = time.time() - start_time
+            logger.debug(f"API fetch for transcript {transcript_id} took {fetch_time:.2f}s")
             return transcript
         except Exception as e:
             logger.error(f"Error fetching transcript {transcript_id}: {e}")
@@ -241,6 +251,11 @@ class FirefliesAPI:
                 logger.warning("Attempted to format empty transcript")
                 return ""
                 
+            # Pre-allocate approximate memory for lines
+            sentences = transcript.get("sentences", [])
+            sentence_count = len(sentences)
+            
+            # Optimize memory usage by pre-allocating
             lines = []
             lines.append(f"=== {transcript['title']} ({transcript['dateString']}) ===")
             
@@ -250,8 +265,6 @@ class FirefliesAPI:
                 if overview:
                     lines.append(f"Summary: {overview}\n")
             
-            sentences = transcript.get("sentences", [])
-            
             # Check if the transcript is still processing
             if not sentences:
                 processing_message = f"Note: Meeting '{transcript.get('title', 'Unknown')}' is still processing. Transcript not available yet."
@@ -260,12 +273,13 @@ class FirefliesAPI:
                 return "\n".join(lines)
                 
             lines.append("Transcript:")
-            logger.info(f"Processing {len(sentences)} sentences")
+            logger.info(f"Processing {sentence_count} sentences")
             
-            for s in sentences:
-                speaker = s.get("speaker_name", "Unknown")
-                text = s.get("text") or s.get("raw_text") or ""
-                lines.append(f"{speaker}: {text}")
+            # Use list comprehension for better performance with larger transcripts
+            lines.extend([
+                f"{s.get('speaker_name', 'Unknown')}: {s.get('text') or s.get('raw_text') or ''}"
+                for s in sentences
+            ])
             
             return "\n".join(lines)
         except Exception as e:

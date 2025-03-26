@@ -134,16 +134,19 @@ def fetch_transcripts_parallel(transcript_ids, api):
     try:
         import concurrent.futures
         
-        logger.info(f"Fetching {len(transcript_ids)} transcripts in parallel")
+        # Set max workers to match number of transcripts for optimal parallelism
+        max_workers = min(len(transcript_ids), 10)  # Cap at 10 to avoid overloading the API
+        
+        logger.info(f"Fetching {len(transcript_ids)} transcripts in parallel with {max_workers} workers")
         start_time = time.time()
         
         transcripts_dict = {}
         
         # Use ThreadPoolExecutor to fetch transcripts in parallel
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Create a dictionary mapping futures to transcript IDs
             future_to_id = {
-                executor.submit(api.get_transcript_by_id, transcript_id): transcript_id
+                executor.submit(api.get_transcript_by_id, transcript_id, timeout=8): transcript_id
                 for transcript_id in transcript_ids
             }
             
@@ -154,7 +157,8 @@ def fetch_transcripts_parallel(transcript_ids, api):
                     transcript = future.result()
                     if transcript:
                         transcripts_dict[transcript_id] = transcript
-                        logger.debug(f"Successfully fetched transcript: {transcript_id}")
+                        fetch_time = time.time() - start_time
+                        logger.debug(f"Successfully fetched transcript: {transcript_id} in {fetch_time:.2f}s")
                     else:
                         logger.warning(f"Could not fetch transcript: {transcript_id}")
                 except Exception as e:
@@ -215,16 +219,21 @@ def main():
         # Fetch transcripts in parallel
         transcripts_dict = fetch_transcripts_parallel(transcript_ids, api)
         
-        # Process transcripts in the original order
+        # Process transcripts in the original order (optimize formatting)
+        logger.info("Formatting transcripts")
+        format_start_time = time.time()
+        
         all_transcripts = []
         for transcript_id in transcript_ids:
             if transcript_id in transcripts_dict:
-                logger.info(f"Formatting transcript ID: {transcript_id}")
                 formatted = api.format_transcript(transcripts_dict[transcript_id])
                 all_transcripts.append(formatted)
             else:
                 logger.warning(f"Could not fetch transcript with ID: {transcript_id}")
                 print(f"Warning: Could not fetch transcript with ID: {transcript_id}")
+                
+        format_time = time.time() - format_start_time
+        logger.info(f"Formatted {len(all_transcripts)} transcripts in {format_time:.2f}s")
         
         if not all_transcripts:
             logger.error("Failed to fetch any transcripts")

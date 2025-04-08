@@ -231,7 +231,17 @@ def main():
         
         # Fetch transcripts in parallel
         print(f"FlyCast: Fetching {len(transcript_ids)} transcripts (this may take a moment)...")
+        print(f"FlyCast: If this takes too long, the network connection may be slow.")
+        print(f"FlyCast: You can check debug.log for detailed progress information.")
+        
+        fetch_start = time.time()
         transcripts_dict = fetch_transcripts_parallel(transcript_ids, api)
+        fetch_duration = time.time() - fetch_start
+        
+        if fetch_duration > 10:
+            print(f"FlyCast: Transcript fetching took {fetch_duration:.1f}s - this is longer than expected.")
+            print(f"FlyCast: Consider checking your network connection if this continues.")
+        
         print(f"FlyCast: Successfully retrieved {len(transcripts_dict)} transcripts")
         
         # Process transcripts in the original order (optimize formatting)

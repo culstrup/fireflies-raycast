@@ -69,9 +69,19 @@ python fetch_fireflies_from_chrome_tabs.py --debug
 
 # Check logs for slow API responses
 tail -50 debug.log | grep "took"
+
+# Test basic network performance
+python -c "import requests, time; start=time.time(); r=requests.get('https://google.com'); print(f'Network latency: {time.time()-start:.2f}s')"
 ```
 
-The script uses parallel fetching with connection pooling to optimize performance. The main bottleneck is typically the Fireflies API response time, which can vary significantly (from 1s to 60s per transcript).
+The script uses optimized connection pooling with intelligent timeouts to reliably fetch transcripts:
+
+- Separate connect and read timeouts (5s for connection, full timeout for reads)
+- Multiple connection pools with higher connection limits
+- Automatic retries for transient network failures
+- Enhanced error handling and diagnostics
+
+Network performance can significantly impact script execution time. If requests are consistently taking >10 seconds, check your network connection and VPN settings.
 
 ## CI Testing Notes
 

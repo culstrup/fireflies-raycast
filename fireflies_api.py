@@ -33,8 +33,32 @@ class FirefliesAPI:
             logger.error("No API key provided or found in environment")
             raise ValueError("FIREFLIES_API_KEY not set. Please set it in .env file or provide it directly.")
             
-        # Create a session for connection pooling
+        # Create a session with optimized connection pooling
+        import urllib3
+        
+        # Configure connection pooling with higher max connections
+        pool_manager = urllib3.PoolManager(
+            num_pools=4,              # Use multiple connection pools
+            maxsize=10,               # Increase max connections per pool
+            timeout=urllib3.Timeout(
+                connect=5.0,          # Connection timeout
+                read=120.0            # Read timeout (generous for large transcripts)
+            ),
+            retries=urllib3.Retry(
+                total=3,              # Total number of retries
+                backoff_factor=0.5,   # Backoff factor between retries
+                status_forcelist=[500, 502, 503, 504]  # Retry on these HTTP statuses
+            )
+        )
+        
+        # Create a session with the custom connection pool
         self.session = requests.Session()
+        
+        # Set custom adapter with our pool manager
+        adapter = requests.adapters.HTTPAdapter(pool_connections=4, pool_maxsize=10)
+        self.session.mount('https://', adapter)
+        
+        # Update headers
         self.session.headers.update({
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.api_key}"
@@ -98,11 +122,22 @@ class FirefliesAPI:
             # Display timeout info
             print(f"FlyCast: Sending API request with {timeout}s timeout...")
             
-            resp = self.session.post(
-                GRAPHQL_ENDPOINT, 
-                json={"query": query, "variables": variables},
-                timeout=timeout
-            )
+            start_request = time.time()
+            # Set both connect and read timeouts
+            timeouts = (min(5, timeout/2), timeout)  # (connect_timeout, read_timeout)
+            
+            try:
+                resp = self.session.post(
+                    GRAPHQL_ENDPOINT, 
+                    json={"query": query, "variables": variables},
+                    timeout=timeouts
+                )
+                request_time = time.time() - start_request
+                print(f"FlyCast: Network request completed in {request_time:.2f}s")
+            except requests.exceptions.Timeout:
+                logger.error(f"API request timed out after {timeout}s")
+                print(f"FlyCast: API request timed out after {timeout}s")
+                raise ValueError(f"API request timed out. Consider increasing the timeout value.")
             
             print(f"FlyCast: Received API response with status code {resp.status_code}")
             

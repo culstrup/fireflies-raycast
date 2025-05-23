@@ -16,10 +16,11 @@
 
 # Setup the environment and run the script
 echo "Starting Fireflies transcript fetch..."
-source "$(dirname "$0")/.venv/bin/activate"
+cd "$(dirname "$0")"
+source .venv/bin/activate
 
 # Run with debug mode to provide more visibility
-python3 "$(dirname "$0")/fetch_fireflies_from_chrome_tabs.py" --paste --debug
+python "$(dirname "$0")/fetch_fireflies_from_chrome_tabs.py" --paste --debug
 
 # Show notification when complete
 echo "Fireflies transcript fetch completed!"

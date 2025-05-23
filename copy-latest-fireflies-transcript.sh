@@ -15,5 +15,6 @@
 # @raycast.authorURL https://raycast.com/christian_ulstrup
 
 # Setup the environment and run the script
-source "$(dirname "$0")/.venv/bin/activate"
-python3 "$(dirname "$0")/fireflies_clipboard.py"
+cd "$(dirname "$0")"
+source .venv/bin/activate
+python "$(dirname "$0")/fireflies_clipboard.py"

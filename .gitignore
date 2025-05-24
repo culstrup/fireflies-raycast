@@ -14,6 +14,12 @@ LOCAL_SCRATCHPAD.md
 debug.log
 *.log
 
+# Coverage files
+.coverage
+coverage.xml
+junit.xml
+htmlcov/
+
 # macOS
 .DS_Store
 

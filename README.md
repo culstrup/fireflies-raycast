@@ -4,6 +4,7 @@
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/culstrup/fireflies-raycast.svg)](https://github.com/culstrup/fireflies-raycast/stargazers)
+[![codecov](https://codecov.io/gh/culstrup/fireflies-raycast/graph/badge.svg)](https://codecov.io/gh/culstrup/fireflies-raycast)
 [![Ko-fi](https://img.shields.io/badge/Support-Ko--fi-FF5E5B.svg)](https://ko-fi.com/culstrup)
 
 </div>

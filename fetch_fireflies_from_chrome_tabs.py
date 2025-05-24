@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 
-import os
-import sys
-import re
-import pyperclip
-import subprocess
-import time
-import logging
-import traceback
 import argparse
+import logging
+import os
+import re
+import subprocess
+import sys
+import time
+import traceback
+
+import pyperclip
+
 from fireflies_api import FirefliesAPI
 
 # Setup logging
@@ -63,7 +65,7 @@ def get_chrome_tabs():
     except Exception as e:
         logger.error(f"Error getting Chrome tabs: {e}")
         logger.error(traceback.format_exc())
-        raise RuntimeError(f"Failed to get Chrome tabs: {str(e)}")
+        raise RuntimeError(f"Failed to get Chrome tabs: {str(e)}") from e
 
 def extract_transcript_ids(urls):
     """
@@ -95,7 +97,7 @@ def extract_transcript_ids(urls):
     except Exception as e:
         logger.error(f"Error extracting transcript IDs: {e}")
         logger.error(traceback.format_exc())
-        raise RuntimeError(f"Failed to extract transcript IDs: {str(e)}")
+        raise RuntimeError(f"Failed to extract transcript IDs: {str(e)}") from e
 
 def attempt_paste():
     """
@@ -233,8 +235,8 @@ def main():
         
         # Fetch transcripts in parallel
         print(f"FlyCast: Fetching {len(transcript_ids)} transcripts (this may take a moment)...")
-        print(f"FlyCast: If this takes too long, the network connection may be slow.")
-        print(f"FlyCast: You can check debug.log for detailed progress information.")
+        print("FlyCast: If this takes too long, the network connection may be slow.")
+        print("FlyCast: You can check debug.log for detailed progress information.")
         
         fetch_start = time.time()
         transcripts_dict = fetch_transcripts_parallel(transcript_ids, api)
@@ -242,7 +244,7 @@ def main():
         
         if fetch_duration > 10:
             print(f"FlyCast: Transcript fetching took {fetch_duration:.1f}s - this is longer than expected.")
-            print(f"FlyCast: Consider checking your network connection if this continues.")
+            print("FlyCast: Consider checking your network connection if this continues.")
         
         print(f"FlyCast: Successfully retrieved {len(transcripts_dict)} transcripts")
         
@@ -294,13 +296,13 @@ def main():
             
         end_time = time.time()
         total_time = end_time - start_time
-        logger.info(f"Script completed in {total_time:.2f} seconds, copied {len(all_transcripts)} transcripts to clipboard")
+        logger.info(f"Script completed in {total_time:.2f} seconds, copied {len(all_transcripts)} transcripts to clipboard")  # noqa: E501
         
         if paste_success:
-            print(f"FlyCast: Copied and pasted {len(all_transcripts)} Fireflies transcripts successfully in {total_time:.2f} seconds.")
+            print(f"FlyCast: Copied and pasted {len(all_transcripts)} Fireflies transcripts successfully in {total_time:.2f} seconds.")  # noqa: E501
         else:
             # If paste didn't work, it's still in the clipboard
-            print(f"FlyCast: Copied {len(all_transcripts)} Fireflies transcripts to clipboard in {total_time:.2f} seconds. Paste manually with Cmd+V.")
+            print(f"FlyCast: Copied {len(all_transcripts)} Fireflies transcripts to clipboard in {total_time:.2f} seconds. Paste manually with Cmd+V.")  # noqa: E501
             
     except Exception as e:
         logger.error(f"Unexpected error in main function: {e}")

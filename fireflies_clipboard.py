@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
-import os
-import sys
-import datetime
-from dateutil import parser as date_parser
-import pyperclip
-import subprocess
-import time
 import logging
+import subprocess
+import sys
+import time
 import traceback
+
+import pyperclip
+from dateutil import parser as date_parser
+
 from fireflies_api import FirefliesAPI
 
 # Setup logging
@@ -47,10 +47,10 @@ def setup_clipboard(content):
                 print("Copied and pasted Fireflies transcript successfully!")
             else:
                 logger.warning(f"Failed to paste: {result.stderr}")
-                print(f"Copied Fireflies transcript to clipboard. Paste manually with Cmd+V.")
+                print("Copied Fireflies transcript to clipboard. Paste manually with Cmd+V.")
         except Exception as e:
             logger.error(f"Error while pasting: {e}")
-            print(f"Copied Fireflies transcript to clipboard. Paste manually with Cmd+V.")
+            print("Copied Fireflies transcript to clipboard. Paste manually with Cmd+V.")
     except Exception as e:
         logger.error(f"Error copying to clipboard: {e}")
         logger.error(traceback.format_exc())
@@ -96,7 +96,7 @@ def main():
         # Check if the transcript is still processing
         sentences = newest.get("sentences", [])
         if not sentences:
-            print(f"The latest meeting '{newest.get('title', 'Unknown')}' is still processing. Transcript not available yet.")
+            print(f"The latest meeting '{newest.get('title', 'Unknown')}' is still processing. Transcript not available yet.")  # noqa: E501
             return
             
         # Format the transcript

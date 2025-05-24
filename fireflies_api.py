@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
-import os
-import sys
-import requests
 import logging
-import traceback
+import os
 import time
+import traceback
+
+import requests
 from dotenv import load_dotenv
-from pathlib import Path
 
 logger = logging.getLogger("fireflies_api")
 
@@ -31,32 +30,21 @@ class FirefliesAPI:
         self.api_key = api_key or self._load_api_key()
         if not self.api_key:
             logger.error("No API key provided or found in environment")
-            raise ValueError("FIREFLIES_API_KEY not set. Please set it in .env file or provide it directly.")
+            raise ValueError(
+                "FIREFLIES_API_KEY not set. Please set it in .env file or provide it directly."
+            )
             
         # Create a session with optimized connection pooling
-        import urllib3
-        
-        # Configure connection pooling with higher max connections
-        pool_manager = urllib3.PoolManager(
-            num_pools=4,              # Use multiple connection pools
-            maxsize=10,               # Increase max connections per pool
-            timeout=urllib3.Timeout(
-                connect=5.0,          # Connection timeout
-                read=120.0            # Read timeout (generous for large transcripts)
-            ),
-            retries=urllib3.Retry(
-                total=3,              # Total number of retries
-                backoff_factor=0.5,   # Backoff factor between retries
-                status_forcelist=[500, 502, 503, 504]  # Retry on these HTTP statuses
-            )
-        )
-        
-        # Create a session with the custom connection pool
         self.session = requests.Session()
         
-        # Set custom adapter with our pool manager
-        adapter = requests.adapters.HTTPAdapter(pool_connections=4, pool_maxsize=10)
+        # Configure the adapter with connection pooling settings
+        adapter = requests.adapters.HTTPAdapter(
+            pool_connections=4,  # Number of connection pools to cache
+            pool_maxsize=10,     # Maximum connections to save in the pool
+            max_retries=3        # Retry failed requests
+        )
         self.session.mount('https://', adapter)
+        self.session.mount('http://', adapter)
         
         # Update headers
         self.session.headers.update({
@@ -134,10 +122,10 @@ class FirefliesAPI:
                 )
                 request_time = time.time() - start_request
                 print(f"FlyCast: Network request completed in {request_time:.2f}s")
-            except requests.exceptions.Timeout:
+            except requests.exceptions.Timeout as e:
                 logger.error(f"API request timed out after {timeout}s")
                 print(f"FlyCast: API request timed out after {timeout}s")
-                raise ValueError(f"API request timed out. Consider increasing the timeout value.")
+                raise ValueError("API request timed out. Consider increasing the timeout value.") from e
             
             print(f"FlyCast: Received API response with status code {resp.status_code}")
             
@@ -146,7 +134,7 @@ class FirefliesAPI:
                 try:
                     error_detail = resp.json()
                     error_message += f": {error_detail.get('errors', [{}])[0].get('message', 'Unknown error')}"
-                except:
+                except (ValueError, requests.exceptions.JSONDecodeError):
                     error_message += f": {resp.text[:100]}"
                 
                 logger.error(error_message)
@@ -174,7 +162,7 @@ class FirefliesAPI:
         except Exception as e:
             logger.error(f"Unexpected error during API request: {e}")
             logger.error(traceback.format_exc())
-            raise ValueError(f"Unexpected error: {str(e)}")
+            raise ValueError(f"Unexpected error: {str(e)}") from e
     
     def get_recent_transcripts(self, limit=5, days=7):
         """
@@ -223,7 +211,7 @@ class FirefliesAPI:
             return transcripts
         except Exception as e:
             logger.error(f"Error fetching recent transcripts: {e}")
-            raise ValueError(f"Failed to fetch recent transcripts: {str(e)}")
+            raise ValueError(f"Failed to fetch recent transcripts: {str(e)}") from e
             
     def get_transcript_by_id(self, transcript_id, timeout=None):
         """
@@ -279,7 +267,7 @@ class FirefliesAPI:
         except Exception as e:
             logger.error(f"Error fetching transcript {transcript_id}: {e}")
             print(f"FlyCast: Error fetching transcript {transcript_id}: {e}")
-            raise ValueError(f"Failed to fetch transcript {transcript_id}: {str(e)}")
+            raise ValueError(f"Failed to fetch transcript {transcript_id}: {str(e)}") from e
             
     def format_transcript(self, transcript):
         """
@@ -312,7 +300,7 @@ class FirefliesAPI:
             
             # Check if the transcript is still processing
             if not sentences:
-                processing_message = f"Note: Meeting '{transcript.get('title', 'Unknown')}' is still processing. Transcript not available yet."
+                processing_message = f"Note: Meeting '{transcript.get('title', 'Unknown')}' is still processing. Transcript not available yet."  # noqa: E501
                 logger.warning(processing_message)
                 lines.append(processing_message)
                 return "\n".join(lines)

@@ -6,8 +6,8 @@ It should be run in the GitHub Actions workflow before running tests.
 """
 
 import os
-import sys
 import subprocess
+
 
 def prepare_test_environment():
     """

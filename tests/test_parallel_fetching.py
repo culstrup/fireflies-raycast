@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
-import unittest
-from unittest.mock import patch, MagicMock, call
-import sys
 import os
-import concurrent.futures
-import time
+import sys
+import unittest
+from unittest.mock import MagicMock, call, patch
 
 # Add parent directory to path to import the module
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))

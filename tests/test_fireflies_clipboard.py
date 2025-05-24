@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
-import unittest
-from unittest.mock import patch, MagicMock
-import sys
 import os
-import json
-import importlib
+import sys
+import unittest
+from unittest.mock import MagicMock, patch
 
 # Add parent directory to path to import the module
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -113,7 +111,7 @@ class TestFirefliesClipboard(unittest.TestCase):
                 fireflies_clipboard.main()
         
         # Verify a message about processing was printed
-        mock_print.assert_any_call("The latest meeting 'Processing Meeting' is still processing. Transcript not available yet.")
+        mock_print.assert_any_call("The latest meeting 'Processing Meeting' is still processing. Transcript not available yet.")  # noqa: E501
         
         # Verify format_transcript was NOT called
         mock_api.format_transcript.assert_not_called()

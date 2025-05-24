@@ -79,7 +79,8 @@ def extract_transcript_ids(urls):
         logger.info("Extracting transcript IDs from URLs")
         transcript_ids = []
         # Updated pattern to handle both old format (with ::) and new format (without ::)
-        pattern = r"fireflies\.ai/view/(?:.*::)?([A-Za-z0-9]+)/?$"
+        # Transcript IDs must contain at least one digit to be valid
+        pattern = r"fireflies\.ai/view/(?:.*::)?([A-Za-z0-9]*[0-9]+[A-Za-z0-9]*)/?$"
         
         for url in urls:
             match = re.search(pattern, url)

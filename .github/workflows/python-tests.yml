@@ -43,5 +43,20 @@ jobs:
         FIREFLIES_API_KEY: "dummy-test-key-for-ci"
       run: |
         # Use pytest instead of unittest for better isolation
-        # Add timeouts and verbosity to diagnose hanging tests
-        python -m pytest tests/ -v --timeout=30
+        # Add coverage and JUnit XML output for Codecov
+        python -m pytest tests/ -v --timeout=30 --cov=. --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+    
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./coverage.xml
+        fail_ci_if_error: false
+        verbose: true
+    
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./junit.xml

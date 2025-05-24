@@ -67,7 +67,7 @@ class TestFirefliesAPISession(unittest.TestCase):
             self.assertEqual(args[0], "https://api.fireflies.ai/graphql")
             self.assertEqual(kwargs["json"]["query"], "test query")
             self.assertEqual(kwargs["json"]["variables"], {"var": "value"})
-            self.assertEqual(kwargs["timeout"], 60)  # Default timeout
+            self.assertEqual(kwargs["timeout"], (5, 60))  # Default timeout tuple (connect, read)
     
     @patch('requests.Session')
     @patch('fireflies_api.load_dotenv')
@@ -98,7 +98,7 @@ class TestFirefliesAPISession(unittest.TestCase):
             
             # Verify timeout was passed correctly
             kwargs = mock_session.post.call_args[1]
-            self.assertEqual(kwargs["timeout"], custom_timeout)
+            self.assertEqual(kwargs["timeout"], (5, custom_timeout))  # Timeout tuple (connect, read)
     
 if __name__ == '__main__':
     unittest.main()

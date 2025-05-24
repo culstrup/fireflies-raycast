@@ -4,26 +4,27 @@ Generate AI-powered case studies from Fireflies meetings filtered by participant
 Optimized version that stops searching after finding recent domain meetings.
 """
 
-import os
-import sys
-import re
 import logging
+import os
 import subprocess
-from typing import List, Dict
+import sys
 from datetime import datetime, timedelta
+from typing import Dict, List  # noqa: UP035
 
 # Add parent directory to path
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-from fireflies_api import FirefliesAPI
 import google.generativeai as genai
+
+from fireflies_api import FirefliesAPI
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 # Case study generation prompt
-CASE_STUDY_PROMPT = """You are a professional case study writer. Based on the following meeting transcripts with {domain} participants, create a compelling and professional case study.
+CASE_STUDY_PROMPT = """You are a professional case study writer. Based on the following meeting \
+transcripts with {domain} participants, create a compelling and professional case study.
 
 Structure the case study as follows:
 
@@ -72,11 +73,11 @@ class OptimizedCaseStudyGenerator:
             try:
                 self.model = genai.GenerativeModel('gemini-1.5-pro')
                 logger.info("Fell back to Gemini 1.5 Pro model")
-            except:
+            except Exception:
                 self.model = genai.GenerativeModel('gemini-pro')
                 logger.info("Fell back to gemini-pro model")
     
-    def extract_participant_emails(self, transcript: Dict) -> List[str]:
+    def extract_participant_emails(self, transcript: Dict) -> List[str]:  # noqa: UP006
         """Extract all participant emails from a transcript using all available fields."""
         emails = []
         
@@ -115,7 +116,7 @@ class OptimizedCaseStudyGenerator:
         # Deduplicate and return
         return list(set(email.lower() for email in emails if email))
     
-    def is_domain_participant(self, transcript: Dict) -> bool:
+    def is_domain_participant(self, transcript: Dict) -> bool:  # noqa: UP006
         """Check if transcript has participants from the target domain."""
         participant_emails = self.extract_participant_emails(transcript)
         
@@ -126,7 +127,7 @@ class OptimizedCaseStudyGenerator:
                 
         return False
     
-    def fetch_domain_meetings(self) -> List[Dict]:
+    def fetch_domain_meetings(self) -> List[Dict]:  # noqa: UP006
         """Fetch meetings with participants from target domain (optimized)."""
         print(f"FlyCast: Searching for meetings with @{self.domain} participants...")
         logger.info(f"Fetching meetings for domain: {self.domain}")
@@ -195,20 +196,23 @@ class OptimizedCaseStudyGenerator:
                                 print(f"FlyCast: Reached meetings older than {self.days_back} days, stopping search...")
                                 skip = max_to_check  # Force exit from outer loop
                                 break
-                        except:
-                            pass
+                        except Exception:  # noqa: S110
+                            pass  # Date parsing failed, include the meeting anyway
                     
                     if self.is_domain_participant(transcript):
                         all_transcripts.append(transcript)
                         found_domain_meetings += 1
-                        logger.info(f"Found meeting with {self.domain} participant: {transcript.get('title', 'Unknown')}")
+                        logger.info(
+                            f"Found meeting with {self.domain} participant: "
+                            f"{transcript.get('title', 'Unknown')}"
+                        )
                         print(f"✅ Found: {transcript.get('title', 'Unknown')} ({date_str})")
                 
                 skip += limit
                 
                 # Show progress
                 if skip % 30 == 0 and batch:
-                    oldest_date = batch[-1].get('dateString', 'Unknown')
+                    # oldest_date = batch[-1].get('dateString', 'Unknown')  # noqa: F841
                     print(f"FlyCast: Checked {skip} meetings so far...")
                 
                 # Don't stop early - continue until we've checked all meetings in date range
@@ -232,7 +236,7 @@ class OptimizedCaseStudyGenerator:
         print(f"FlyCast: Found {len(all_transcripts)} meetings with @{self.domain} participants")
         return all_transcripts
     
-    def prepare_for_gemini(self, transcripts: List[Dict]) -> str:
+    def prepare_for_gemini(self, transcripts: List[Dict]) -> str:  # noqa: UP006
         """Prepare transcript data for Gemini prompt."""
         content_parts = []
         

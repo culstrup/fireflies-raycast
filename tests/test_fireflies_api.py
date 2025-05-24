@@ -1,14 +1,13 @@
-import unittest
-from unittest.mock import patch, MagicMock
-import sys
 import os
-import json
-from io import StringIO
+import sys
+import unittest
+from unittest.mock import MagicMock, patch
 
 # Add the parent directory to the path so we can import modules
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from fireflies_api import FirefliesAPI
+
 
 class TestFirefliesAPI(unittest.TestCase):
     """Test cases for the FirefliesAPI class."""

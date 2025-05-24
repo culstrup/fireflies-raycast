@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
-import unittest
-from unittest.mock import patch, MagicMock
-import sys
 import os
-import json
+import sys
+import unittest
+from unittest.mock import MagicMock, patch
 
 # Add parent directory to path to import the module
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))

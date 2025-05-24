@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-import unittest
-from unittest.mock import patch, MagicMock, call
-import sys
 import os
+import sys
+import unittest
+from unittest.mock import MagicMock, patch
 
 # Add parent directory to path to import the module
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -21,7 +21,7 @@ class TestFirefliesAPISession(unittest.TestCase):
         # Mock environment variables
         with patch.dict(os.environ, {"FIREFLIES_API_KEY": "test-api-key"}):
             # Create API instance
-            api = FirefliesAPI()
+            _ = FirefliesAPI()  # Creating instance to test session setup
             
             # Verify Session was created
             mock_session_class.assert_called_once()
@@ -57,7 +57,7 @@ class TestFirefliesAPISession(unittest.TestCase):
             api = FirefliesAPI()
             
             # Call execute_query
-            result = api.execute_query("test query", {"var": "value"})
+            _ = api.execute_query("test query", {"var": "value"})  # Testing the call, not the result
             
             # Verify session's post method was called correctly
             mock_session.post.assert_called_once()
@@ -94,7 +94,7 @@ class TestFirefliesAPISession(unittest.TestCase):
             
             # Call execute_query with custom timeout
             custom_timeout = 30
-            result = api.execute_query("test query", {"var": "value"}, timeout=custom_timeout)
+            _ = api.execute_query("test query", {"var": "value"}, timeout=custom_timeout)  # Testing timeout param
             
             # Verify timeout was passed correctly
             kwargs = mock_session.post.call_args[1]

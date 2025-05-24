@@ -48,7 +48,7 @@ After pushing to GitHub:
    - Add a description
    - Set up GitHub Pages if desired
    - Configure branch protection rules
-   
+
 2. Add screenshots to the `screenshots` directory, then update the README to remove the placeholder note.
 
 3. Share your repository with others!

@@ -51,7 +51,7 @@ an individual is officially representing the community in public spaces.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the project maintainers. All complaints will be reviewed and investigated 
+reported to the project maintainers. All complaints will be reviewed and investigated
 promptly and fairly.
 
 ## Attribution

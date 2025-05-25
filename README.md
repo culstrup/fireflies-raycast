@@ -13,8 +13,9 @@ Access your [Fireflies.ai](https://fireflies.ai) meeting transcripts directly fr
 
 1. **Copy your latest transcript** to your clipboard with a single command
 2. **Fetch transcripts from open Chrome tabs** and copy them to your clipboard
+3. **Generate AI-powered case studies** from all meetings with a specific client domain
 
-Perfect for quickly referencing meeting notes, summaries, and transcripts while working.
+Perfect for quickly referencing meeting notes, creating client success stories, and leveraging your meeting data with AI.
 
 ## 🤔 Why FlyCast?
 
@@ -32,6 +33,9 @@ FlyCast solves this problem by making it effortless to:
 - Get AI coaching and feedback on sales calls or negotiations
 - Turn complex discussions into bespoke proposals
 - Combine transcripts from multiple meetings on the same project for complete context
+- **Generate professional case studies when closing out client projects**
+- **Create client success stories for marketing and testimonials**
+- **Produce project retrospectives for internal learning**
 
 ## 📸 Screenshots
 
@@ -49,7 +53,12 @@ FlyCast solves this problem by making it effortless to:
    ./setup.sh
    ```
 3. Enter your Fireflies API key when prompted (or add it to the `.env` file later)
-4. Add the script directory to Raycast
+4. **(For Case Studies)** Add your Google AI Studio API key to the `.env` file:
+   ```
+   GOOGLE_AI_STUDIO_KEY="your-google-ai-key-here"
+   ```
+   Get your key at [Google AI Studio](https://aistudio.google.com/app/apikey)
+5. Add the script directory to Raycast
 
 ## 📋 How to Get Your Fireflies API Key
 
@@ -79,9 +88,10 @@ Once installed, you'll have access to these commands in Raycast:
    source .venv/bin/activate
    pip install -r requirements.txt
    ```
-3. Create a `.env` file with your Fireflies API key:
+3. Create a `.env` file with your API keys:
    ```
-   FIREFLIES_API_KEY="your-api-key-here"
+   FIREFLIES_API_KEY="your-fireflies-api-key-here"
+   GOOGLE_AI_STUDIO_KEY="your-google-ai-key-here"  # For case study generation
    ```
 4. Make the scripts executable:
    ```bash
@@ -117,18 +127,67 @@ To enable automatic pasting:
 
 ### 🤖 AI Case Study Generator
 
-The case study generator uses Google's Gemini AI to create professional case studies from your client meetings:
+**Transform your client meetings into professional case studies with one command!**
 
-- **Domain-based filtering**: Finds all meetings with participants from a specific email domain
-- **AI-powered analysis**: Uses Gemini 2.5 Pro to analyze meeting transcripts and generate insights
-- **Chronological narrative**: Orders meetings by date to tell a coherent story
-- **Professional output**: Creates structured case studies with executive summaries, challenges, solutions, and results
+Perfect for when you're closing out a project and need to quickly create a shareable success story. The case study generator uses Google's Gemini AI to analyze all meetings with a specific client and produce a compelling narrative.
 
-To use the case study generator:
-1. Ensure you have a Google AI Studio API key in your `.env` file as `GOOGLE_AI_STUDIO_KEY`
-2. Run the command in Raycast with a client domain (e.g., "acme.com")
-3. Optionally specify days to look back (default: 180 days)
-4. The case study will be generated and copied to your clipboard
+#### Key Features
+
+- **Domain-based filtering**: Automatically finds all meetings with participants from your client's email domain
+- **Flexible time ranges**: Look back 10, 30, 60, 90, 180 days or more to capture the full project lifecycle
+- **AI-powered analysis**: Uses Gemini 2.5 Pro to identify key themes, challenges, solutions, and outcomes
+- **Chronological narrative**: Orders meetings by date to show project progression and evolution
+- **Professional output**: Creates publication-ready case studies with:
+  - Executive Summary
+  - Client Background & Challenges
+  - Solution Journey
+  - Implementation Process
+  - Results & Impact
+  - Client Testimonials (extracted from actual meeting quotes)
+  - Key Takeaways
+
+#### How to Use
+
+1. **Run the command** in Raycast: "Generate Case Study from Domain"
+2. **Enter the client domain** (e.g., "acme.com")
+3. **Specify days to look back** (optional, default: 180 days)
+   - Recent project? Try 30 or 60 days
+   - Long engagement? Use 90 or 180 days
+4. **Wait ~20-30 seconds** while FlyCast:
+   - Searches through your meetings
+   - Filters for the client domain
+   - Analyzes the transcripts with AI
+   - Generates the case study
+5. **Case study is copied to clipboard** - paste into Google Docs, Notion, etc.
+6. **Review and refine** before sharing with your client for approval
+
+#### Example Workflow
+
+```bash
+# Just closed a 3-month project with Acme Corp?
+Raycast: Generate Case Study from Domain
+Domain: acme.com
+Days back: 90
+
+# Result: Professional case study ready to share!
+```
+
+#### Sample Output Preview
+
+```markdown
+# Acme Corp: Transforming Customer Engagement Through Strategic Innovation
+
+## Executive Summary
+Over a 3-month engagement, we partnered with Acme Corp to revolutionize their
+customer engagement strategy, resulting in a 40% increase in user satisfaction...
+
+## Client Background
+Acme Corp, a leading provider of enterprise software solutions...
+
+## The Challenge
+"We were struggling to understand why our user engagement was declining,"
+explained Sarah Johnson, VP of Product at Acme Corp during our initial meeting...
+```
 
 ## 📝 Requirements
 
@@ -140,10 +199,31 @@ To use the case study generator:
 
 ## 🔍 Troubleshooting
 
-If you experience issues:
+### General Issues
 - Check the debug log at `debug.log` in the script directory
-- Ensure your API key is correct in the `.env` file
+- Ensure your API keys are correct in the `.env` file
 - Verify that you've granted accessibility permissions to Raycast
+
+### Case Study Generation Issues
+
+**"No meetings found with participants from @domain"**
+- Verify the domain is correct (e.g., "company.com" not "www.company.com")
+- Check if participants use different email domains (subsidiaries, personal emails)
+- Try increasing the days back parameter
+
+**"GOOGLE_AI_STUDIO_KEY not found"**
+- Add your Google AI Studio API key to the `.env` file
+- Get a free key at [Google AI Studio](https://aistudio.google.com/app/apikey)
+
+**Case study is too short or missing content**
+- Ensure you have substantial meeting content with the client
+- Try a longer time range to capture more meetings
+- Check that meetings have transcript content (not just titles)
+
+**Generation takes too long**
+- Normal generation time is 20-40 seconds
+- Searching through many meetings (>100) may take longer
+- Consider using a more specific date range
 
 ## 🧪 Testing
 
@@ -201,6 +281,15 @@ If you find FlyCast useful, consider supporting its development:
 - Contribute improvements via pull requests
 
 Your support helps maintain and improve this tool!
+
+### 📊 Case Study Best Practices
+
+1. **Timing is Everything**: Generate case studies while the project is fresh - within a week of completion
+2. **Domain Accuracy**: Use the exact email domain your client uses (check meeting participants)
+3. **Review Before Sharing**: AI-generated content should be reviewed and refined
+4. **Client Approval**: Always get written approval before publishing or sharing publicly
+5. **Sensitive Information**: Review for any confidential data before sharing
+6. **Multiple Stakeholders**: If meetings include multiple client domains, focus on the primary one
 
 ## 📄 License
 

@@ -172,9 +172,10 @@ class DomainCaseStudyGenerator:
         print(f"FlyCast: Searching for meetings with @{self.domain} participants...")
         logger.info(f"Fetching meetings for domain: {self.domain}")
 
-        # Calculate date range
+        # Calculate date range (timezone-aware to match API dates)
         from_date = datetime.now() - timedelta(days=self.days_back)
-        from_date.strftime("%Y-%m-%d")
+        # Make timezone-naive for comparison (API returns UTC times)
+        from_date = from_date.replace(tzinfo=None)
 
         # Fetch transcripts with pagination but WITHOUT fromDate filter
         # The API seems to not return older meetings when fromDate is used
@@ -232,11 +233,15 @@ class DomainCaseStudyGenerator:
                 should_stop = False
 
                 for transcript in batch:
-                    # Filter by date FIRST, before checking domain
+                    # Check date first
                     date_str = transcript.get("dateString") or transcript.get("date")
+                    meeting_date = None
+
                     if date_str:
                         try:
                             meeting_date = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+                            # Convert to timezone-naive for comparison
+                            meeting_date = meeting_date.replace(tzinfo=None)
                             if meeting_date < from_date:
                                 # Since results are sorted by date desc, if we hit an old meeting,
                                 # all subsequent meetings will also be old
@@ -244,12 +249,18 @@ class DomainCaseStudyGenerator:
                                 logger.info(f"Hit meeting from {meeting_date}, stopping search")
                                 break
                         except Exception:
-                            pass  # If date parsing fails, include the meeting
+                            # If date parsing fails, include the meeting (assume it's recent)
+                            pass
 
-                    # Only check domain if within date range
+                    # Only add domain meetings that are within the date range
                     if self.is_domain_participant(transcript):
-                        batch_domain_meetings.append(transcript)
-                        found_domain_meetings += 1
+                        # Check if meeting is within date range
+                        if meeting_date is None or meeting_date >= from_date:
+                            batch_domain_meetings.append(transcript)
+                            found_domain_meetings += 1
+                            logger.debug(f"Added meeting from {date_str} - within {self.days_back} days")
+                        else:
+                            logger.debug(f"Skipped old meeting from {date_str} - older than {self.days_back} days")
 
                 all_transcripts.extend(batch_domain_meetings)
 
@@ -301,17 +312,19 @@ class DomainCaseStudyGenerator:
         date_str = transcript.get("dateString", "")
         if date_str:
             try:
-                return date_parser.parse(date_str)
+                dt = date_parser.parse(date_str)
+                return dt.replace(tzinfo=None)  # Make timezone-naive
             except Exception:
                 pass
 
         # Fall back to timestamp
         timestamp = transcript.get("date", 0)
         if timestamp:
-            return datetime.fromtimestamp(timestamp / 1000)  # Convert from milliseconds
+            dt = datetime.fromtimestamp(timestamp / 1000)  # Convert from milliseconds
+            return dt.replace(tzinfo=None)  # Make timezone-naive
 
         # Default to now if no date found
-        return datetime.now()
+        return datetime.now().replace(tzinfo=None)
 
     def prepare_for_gemini(self, transcripts: list[dict]) -> tuple[str, dict[str, any]]:
         """

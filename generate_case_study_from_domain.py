@@ -229,6 +229,8 @@ class DomainCaseStudyGenerator:
 
                 # Filter this batch for domain participants
                 batch_domain_meetings = []
+                should_stop = False
+
                 for transcript in batch:
                     # Filter by date since we removed fromDate from query
                     date_str = transcript.get("dateString") or transcript.get("date")
@@ -236,7 +238,10 @@ class DomainCaseStudyGenerator:
                         try:
                             meeting_date = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
                             if meeting_date < from_date:
-                                continue  # Skip meetings older than our date range
+                                # Since results are sorted by date desc, if we hit an old meeting,
+                                # all subsequent meetings will also be old
+                                should_stop = True
+                                break
                         except Exception:
                             pass  # If date parsing fails, include the meeting
 
@@ -245,6 +250,11 @@ class DomainCaseStudyGenerator:
                         found_domain_meetings += 1
 
                 all_transcripts.extend(batch_domain_meetings)
+
+                # Stop fetching if we've gone past our date range
+                if should_stop:
+                    logger.info(f"Reached meetings older than {self.days_back} days, stopping search")
+                    break
 
                 # If we got fewer than the limit, we've reached the end
                 if len(batch) < limit:
@@ -512,6 +522,10 @@ def main():
         logger.error(f"Fatal error: {e}")
         logger.error(traceback.format_exc())
         sys.exit(1)
+
+    # Script completed successfully
+    logger.info("Script completed successfully")
+    sys.exit(0)
 
 
 if __name__ == "__main__":

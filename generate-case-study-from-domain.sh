@@ -50,11 +50,16 @@ fi
 # Set default days back if not provided
 DAYS_BACK="${2:-180}"
 
+# Debug: Show what we're about to run
+echo "FlyCast: Generating case study for domain: $1"
+echo "FlyCast: Looking back $DAYS_BACK days"
+
 # Run the full Python script with arguments (includes complete transcripts)
-python3 generate_case_study_from_domain.py "$1" "$DAYS_BACK" 2>&1
+python3 "${SCRIPT_DIR}/generate_case_study_from_domain.py" "$1" "$DAYS_BACK" 2>&1
+EXIT_CODE=$?
 
 # Check exit status
-if [ $? -eq 0 ]; then
+if [ $EXIT_CODE -eq 0 ]; then
     # Play success sound
     afplay /System/Library/Sounds/Glass.aiff 2>/dev/null &
 else

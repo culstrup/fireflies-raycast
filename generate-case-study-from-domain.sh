@@ -50,8 +50,8 @@ fi
 # Set default days back if not provided
 DAYS_BACK="${2:-180}"
 
-# Run the optimized Python script with arguments
-python3 generate_case_study_optimized.py "$1" "$DAYS_BACK" 2>&1
+# Run the full Python script with arguments (includes complete transcripts)
+python3 generate_case_study_from_domain.py "$1" "$DAYS_BACK" 2>&1
 
 # Check exit status
 if [ $? -eq 0 ]; then

@@ -232,7 +232,7 @@ class DomainCaseStudyGenerator:
                 should_stop = False
 
                 for transcript in batch:
-                    # Filter by date since we removed fromDate from query
+                    # Filter by date FIRST, before checking domain
                     date_str = transcript.get("dateString") or transcript.get("date")
                     if date_str:
                         try:
@@ -241,10 +241,12 @@ class DomainCaseStudyGenerator:
                                 # Since results are sorted by date desc, if we hit an old meeting,
                                 # all subsequent meetings will also be old
                                 should_stop = True
+                                logger.info(f"Hit meeting from {meeting_date}, stopping search")
                                 break
                         except Exception:
                             pass  # If date parsing fails, include the meeting
 
+                    # Only check domain if within date range
                     if self.is_domain_participant(transcript):
                         batch_domain_meetings.append(transcript)
                         found_domain_meetings += 1
@@ -263,11 +265,12 @@ class DomainCaseStudyGenerator:
                 skip += limit
 
                 # Show progress - also show the date range we've covered
-                if batch:
+                if batch and not should_stop:
                     oldest_date = batch[-1].get("dateString", "Unknown")
+                    newest_date = batch[0].get("dateString", "Unknown")
                     print(
-                        f"FlyCast: Processed {skip} meetings (oldest: {oldest_date}), "
-                        f"found {found_domain_meetings} with @{self.domain}..."
+                        f"FlyCast: Batch covers {newest_date[:10]} to {oldest_date[:10]}, "
+                        f"found {found_domain_meetings} @{self.domain} meetings so far..."
                     )
 
                 # Early exit if we have enough meetings

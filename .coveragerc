@@ -6,6 +6,11 @@ omit =
     */venv/*
     setup.py
     ci_test_fix.py
+    test_*.py
+    debug_*.py
+    explore_*.py
+    list_*.py
+    ci_workflow_patch.yml
 
 [report]
 exclude_lines =

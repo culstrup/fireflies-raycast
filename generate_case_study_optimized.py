@@ -94,7 +94,7 @@ class OptimizedCaseStudyGenerator:
         # Extract from meeting_attendees
         attendees = transcript.get("meeting_attendees", []) or []
         for attendee in attendees:
-            if attendee and attendee.get("email"):
+            if attendee and isinstance(attendee, dict) and attendee.get("email"):
                 emails.append(attendee["email"])
 
         # Check host email
@@ -239,30 +239,32 @@ class OptimizedCaseStudyGenerator:
         """Prepare transcript data for Gemini prompt."""
         content_parts = []
 
-        for transcript in transcripts:
-            meeting_info = []
-            meeting_info.append(f"MEETING: {transcript.get('title', 'Untitled')}")
-            meeting_info.append(f"DATE: {transcript.get('dateString', 'Unknown date')}")
-            meeting_info.append(f"URL: {transcript.get('transcript_url', 'No URL')}")
+        for i, transcript in enumerate(transcripts):
+            try:
+                meeting_info = []
+                meeting_info.append(f"MEETING: {transcript.get('title', 'Untitled')}")
+                meeting_info.append(f"DATE: {transcript.get('dateString', 'Unknown date')}")
+                meeting_info.append(f"URL: {transcript.get('transcript_url', 'No URL')}")
 
-            # Add participant info
-            participant_emails = self.extract_participant_emails(transcript)
-            domain_participants = [e for e in participant_emails if e.endswith(f"@{self.domain}")]
-            if domain_participants:
-                meeting_info.append(f"DOMAIN PARTICIPANTS: {', '.join(domain_participants)}")
+                # Add participant info
+                participant_emails = self.extract_participant_emails(transcript)
+                domain_participants = [e for e in participant_emails if e.endswith(f"@{self.domain}")]
+                if domain_participants:
+                    meeting_info.append(f"DOMAIN PARTICIPANTS: {', '.join(domain_participants)}")
 
-            # Add summary if available
-            summary = transcript.get("summary", {})
-            if summary and summary.get("overview"):
-                meeting_info.append(f"\nSUMMARY:\n{summary['overview']}")
+                # Add summary if available
+                summary = transcript.get("summary") or {}
+                if isinstance(summary, dict) and summary.get("overview"):
+                    meeting_info.append(f"\nSUMMARY:\n{summary['overview']}")
 
-            # Extract key discussion points
-            sentences = transcript.get("sentences", [])[:200]  # First 200 sentences
-            if sentences:
+                # Extract key discussion points
+                sentences = transcript.get("sentences") or []
+                if sentences and isinstance(sentences, list):
+                    sentences = sentences[:200]  # First 200 sentences
                 # Group sentences by speaker
                 speaker_segments = {}
                 for sentence in sentences:
-                    if sentence and sentence.get("text"):
+                    if sentence and isinstance(sentence, dict) and sentence.get("text"):
                         speaker = sentence.get("speaker_name", "Unknown")
                         if speaker not in speaker_segments:
                             speaker_segments[speaker] = []
@@ -280,8 +282,14 @@ class OptimizedCaseStudyGenerator:
                             meeting_info.append(f"- {speaker}: {text}")
                             excerpt_count += 1
 
-            content_parts.append("\n".join(meeting_info))
-            content_parts.append("\n" + "=" * 80 + "\n")
+                content_parts.append("\n".join(meeting_info))
+                content_parts.append("\n" + "=" * 80 + "\n")
+
+            except Exception as e:
+                logger.error(f"Error processing transcript {i+1}: {e}")
+                logger.debug(f"Problematic transcript: {transcript}")
+                print(f"FlyCast: Warning - Skipped meeting {i+1} due to processing error")
+                continue
 
         return "\n".join(content_parts)
 

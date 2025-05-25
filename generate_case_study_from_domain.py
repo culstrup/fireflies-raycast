@@ -121,7 +121,7 @@ class DomainCaseStudyGenerator:
         # Extract from meeting_attendees (detailed attendee info)
         attendees = transcript.get("meeting_attendees", []) or []
         for attendee in attendees:
-            if attendee and attendee.get("email"):
+            if attendee and isinstance(attendee, dict) and attendee.get("email"):
                 emails.append(attendee["email"])
 
         # Check host email
@@ -326,42 +326,52 @@ class DomainCaseStudyGenerator:
         max_chars = 1_500_000  # Leave room for prompt and response
 
         for i, transcript in enumerate(transcripts):
-            meeting_date = self._parse_date(transcript).strftime("%B %d, %Y")
-            title = transcript.get("title", f"Meeting {i+1}")
+            try:
+                meeting_date = self._parse_date(transcript).strftime("%B %d, %Y")
+                title = transcript.get("title", f"Meeting {i+1}")
 
-            # Start with meeting header
-            meeting_text = f"\n{'='*80}\n"
-            meeting_text += f"MEETING {i+1}: {title}\n"
-            meeting_text += f"Date: {meeting_date}\n"
-            meeting_text += f"URL: {transcript.get('transcript_url', 'N/A')}\n"
+                # Start with meeting header
+                meeting_text = f"\n{'='*80}\n"
+                meeting_text += f"MEETING {i+1}: {title}\n"
+                meeting_text += f"Date: {meeting_date}\n"
+                meeting_text += f"URL: {transcript.get('transcript_url', 'N/A')}\n"
 
-            # Add summary if available
-            summary = transcript.get("summary", {}).get("overview", "")
-            if summary:
-                meeting_text += f"\nSummary: {summary}\n"
+                # Add summary if available
+                summary_obj = transcript.get("summary") or {}
+                if isinstance(summary_obj, dict):
+                    summary = summary_obj.get("overview", "")
+                    if summary:
+                        meeting_text += f"\nSummary: {summary}\n"
 
-            meeting_text += f"\nTranscript:\n{'-'*40}\n"
+                meeting_text += f"\nTranscript:\n{'-'*40}\n"
 
-            # Add transcript content
-            sentences = transcript.get("sentences", [])
-            if sentences:
-                for sentence in sentences:
-                    speaker = sentence.get("speaker_name", "Unknown")
-                    text = sentence.get("text") or sentence.get("raw_text", "")
-                    if text:
-                        meeting_text += f"{speaker}: {text}\n"
-            else:
-                meeting_text += "[No transcript content available]\n"
+                # Add transcript content
+                sentences = transcript.get("sentences") or []
+                if sentences and isinstance(sentences, list):
+                    for sentence in sentences:
+                        if isinstance(sentence, dict):
+                            speaker = sentence.get("speaker_name", "Unknown")
+                            text = sentence.get("text") or sentence.get("raw_text", "")
+                            if text:
+                                meeting_text += f"{speaker}: {text}\n"
+                else:
+                    meeting_text += "[No transcript content available]\n"
 
-            # Check if adding this would exceed our limit
-            if total_chars + len(meeting_text) > max_chars:
-                logger.warning(f"Truncating at meeting {i+1} due to token limits")
-                meeting_text = f"\n[Remaining {len(transcripts) - i} meetings truncated due to length limits]\n"
+                # Check if adding this would exceed our limit
+                if total_chars + len(meeting_text) > max_chars:
+                    logger.warning(f"Truncating at meeting {i+1} due to token limits")
+                    meeting_text = f"\n[Remaining {len(transcripts) - i} meetings truncated due to length limits]\n"
+                    formatted_transcripts.append(meeting_text)
+                    break
+
                 formatted_transcripts.append(meeting_text)
-                break
+                total_chars += len(meeting_text)
 
-            formatted_transcripts.append(meeting_text)
-            total_chars += len(meeting_text)
+            except Exception as e:
+                logger.error(f"Error processing transcript {i+1}: {e}")
+                logger.error(f"Transcript data: {transcript}")
+                # Skip this transcript but continue with others
+                continue
 
         content = "".join(formatted_transcripts)
 

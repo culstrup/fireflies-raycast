@@ -43,10 +43,15 @@ class TestDomainCaseStudyGenerator(unittest.TestCase):
 
         transcript = {
             "title": "Meeting with john@example.com",
+            "participants": ["john@example.com", "jane@other.com, bob@example.com"],
+            "host_email": "host@example.com",
+            "meeting_attendees": [
+                {"email": "attendee@example.com", "name": "Attendee"},
+            ],
             "sentences": [
-                {"speaker_name": "john@example.com", "text": "Hello"},
-                {"speaker_name": "jane@other.com", "text": "Hi"},
-                {"speaker_name": "bob@example.com", "text": "Welcome"},
+                {"speaker_name": "John", "text": "Hello"},
+                {"speaker_name": "Jane", "text": "Hi"},
+                {"speaker_name": "Bob", "text": "Welcome"},
             ],
         }
 
@@ -55,7 +60,9 @@ class TestDomainCaseStudyGenerator(unittest.TestCase):
         self.assertIn("john@example.com", emails)
         self.assertIn("jane@other.com", emails)
         self.assertIn("bob@example.com", emails)
-        self.assertEqual(len(emails), 3)
+        self.assertIn("host@example.com", emails)
+        self.assertIn("attendee@example.com", emails)
+        self.assertEqual(len(emails), 5)
 
     @patch("generate_case_study_from_domain.genai")
     @patch("generate_case_study_from_domain.FirefliesAPI")
@@ -65,11 +72,17 @@ class TestDomainCaseStudyGenerator(unittest.TestCase):
         generator = DomainCaseStudyGenerator("example.com")
 
         # Transcript with domain participant
-        transcript_with = {"sentences": [{"speaker_name": "john@example.com", "text": "Hello"}]}
+        transcript_with = {
+            "participants": ["john@example.com", "other@company.com"],
+            "sentences": [{"speaker_name": "John", "text": "Hello"}],
+        }
         self.assertTrue(generator.is_domain_participant(transcript_with))
 
         # Transcript without domain participant
-        transcript_without = {"sentences": [{"speaker_name": "jane@other.com", "text": "Hello"}]}
+        transcript_without = {
+            "participants": ["jane@other.com", "bob@another.com"],
+            "sentences": [{"speaker_name": "Jane", "text": "Hello"}],
+        }
         self.assertFalse(generator.is_domain_participant(transcript_without))
 
     @patch("generate_case_study_from_domain.genai")

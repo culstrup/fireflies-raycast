@@ -17,33 +17,33 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.9', '3.10']
-        
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pytest pytest-timeout pytest-cov
-    
+
     - name: Lint with Ruff
       uses: chartboost/ruff-action@v1
-    
+
     - name: Create dummy env for testing
       run: |
         python ci_test_fix.py
-    
+
     - name: Run tests with network isolation
       env:
         # These environment variables will make real network requests fail
         # This ensures our mocks are working properly
-        PYTHONHTTPSVERIFY: "1" 
+        PYTHONHTTPSVERIFY: "1"
         REQUESTS_CA_BUNDLE: "/nonexistent"
         # Mock API key to avoid real API attempts
         FIREFLIES_API_KEY: "dummy-test-key-for-ci"
@@ -51,7 +51,7 @@ jobs:
         # Use pytest instead of unittest for better isolation
         # Add coverage and JUnit XML output for Codecov
         python -m pytest tests/ -v --timeout=30 --cov=. --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
-    
+
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v5
       with:
@@ -59,7 +59,7 @@ jobs:
         files: ./coverage.xml
         fail_ci_if_error: false
         verbose: true
-    
+
     - name: Upload test results to Codecov
       if: ${{ !cancelled() }}
       uses: codecov/test-results-action@v1

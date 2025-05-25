@@ -51,11 +51,11 @@ read -r answer
 if [[ "$answer" =~ ^[Yy]$ ]]; then
     echo -e "${BLUE}Please enter your Fireflies API key:${NC}"
     read -r api_key
-    
+
     # Update .env file with the provided API key
     sed -i.bak "s/FIREFLIES_API_KEY=\"your-api-key-here\"/FIREFLIES_API_KEY=\"$api_key\"/" .env
     rm -f .env.bak
-    
+
     echo -e "${GREEN}API key saved to .env file.${NC}"
 else
     echo -e "${BLUE}You can manually edit the .env file later to add your API key.${NC}"

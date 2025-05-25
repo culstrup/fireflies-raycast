@@ -35,10 +35,10 @@ FlyCast solves this problem by making it effortless to:
 
 ## 📸 Screenshots
 
-**Copy Latest Transcript:**  
+**Copy Latest Transcript:**
 ![Copy Latest Transcript](screenshots/FlyCast-copy-latest.png)
 
-**Fetch All Transcripts from Chrome Tabs:**  
+**Fetch All Transcripts from Chrome Tabs:**
 ![Fetch from Chrome](screenshots/FlyCast-copy-all-from-chrome.png)
 
 ## 🚀 Quick Setup
@@ -68,6 +68,7 @@ Once installed, you'll have access to these commands in Raycast:
 
 - **Fetch Fireflies Transcripts from Chrome**: Copies transcripts from open Chrome tabs
 - **Copy Latest Fireflies Transcript**: Copies your most recent Fireflies transcript
+- **Generate Case Study from Domain**: Creates AI-powered case studies from meetings with specific client domains
 
 ## 🔧 Manual Setup (if not using setup.sh)
 
@@ -114,6 +115,21 @@ To enable automatic pasting:
 - If accessibility permissions are granted, it can automatically paste content
 - Built with robust error handling for API issues, missing transcripts, and processing meetings
 
+### 🤖 AI Case Study Generator
+
+The case study generator uses Google's Gemini AI to create professional case studies from your client meetings:
+
+- **Domain-based filtering**: Finds all meetings with participants from a specific email domain
+- **AI-powered analysis**: Uses Gemini 2.5 Pro to analyze meeting transcripts and generate insights
+- **Chronological narrative**: Orders meetings by date to tell a coherent story
+- **Professional output**: Creates structured case studies with executive summaries, challenges, solutions, and results
+
+To use the case study generator:
+1. Ensure you have a Google AI Studio API key in your `.env` file as `GOOGLE_AI_STUDIO_KEY`
+2. Run the command in Raycast with a client domain (e.g., "acme.com")
+3. Optionally specify days to look back (default: 180 days)
+4. The case study will be generated and copied to your clipboard
+
 ## 📝 Requirements
 
 - macOS (for AppleScript functionality)
@@ -136,6 +152,33 @@ FlyCast includes unit tests to ensure everything works as expected:
 ```bash
 # Run all tests
 ./run_tests.sh
+```
+
+## 🛠️ Development
+
+### Setting up pre-commit hooks
+
+FlyCast uses pre-commit hooks to ensure code quality. To set them up:
+
+```bash
+# Install development dependencies
+pip install -r requirements.txt
+
+# Install pre-commit hooks
+make setup-hooks
+
+# Or manually:
+pre-commit install
+```
+
+The hooks will automatically run on every commit to:
+- Fix code style issues with Ruff
+- Check for common problems
+- Ensure consistent formatting
+
+To run the hooks manually:
+```bash
+make pre-commit
 ```
 
 ## 🛡️ Security
@@ -161,6 +204,6 @@ Your support helps maintain and improve this tool!
 
 ## 📄 License
 
-This project is licensed under the MIT License by GSD at Work LLC - see the [LICENSE](LICENSE) file for details. 
+This project is licensed under the MIT License by GSD at Work LLC - see the [LICENSE](LICENSE) file for details.
 
 Feel free to use, modify, and distribute this code however you want - all we ask is that you share how it helps you!

@@ -95,3 +95,7 @@ If tests are failing in CI, check:
 - Mock configuration for any new API features
 - Network isolation (tests shouldn't make real API calls)
 - Concurrent execution handling
+
+## API Documentation
+
+- The Fireflies API documentation is here: https://docs.fireflies.ai/ in case you need to reference it, especially while debugging.

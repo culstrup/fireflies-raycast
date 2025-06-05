@@ -182,6 +182,8 @@ class FirefliesAPI:
               text
               raw_text
               speaker_name
+              start_time
+              end_time
             }
           }
         }
@@ -231,6 +233,8 @@ class FirefliesAPI:
               text
               raw_text
               speaker_name
+              start_time
+              end_time
             }
           }
         }
@@ -241,7 +245,8 @@ class FirefliesAPI:
         try:
             start_time = time.time()
             print(f"FlyCast: Fetching transcript {transcript_id}...")
-            data = self.execute_query(query, variables, timeout=timeout)
+            # Use default timeout if none specified
+            data = self.execute_query(query, variables, timeout=timeout or 60)
             if not data:
                 logger.warning(f"No data returned for transcript ID: {transcript_id}")
                 print(f"FlyCast: No data returned for transcript ID: {transcript_id}")
@@ -302,9 +307,23 @@ class FirefliesAPI:
             logger.info(f"Processing {sentence_count} sentences")
 
             # Use list comprehension for better performance with larger transcripts
-            lines.extend(
-                [f"{s.get('speaker_name', 'Unknown')}: {s.get('text') or s.get('raw_text') or ''}" for s in sentences]
-            )
+            # Format timestamps as [MM:SS] if available
+            formatted_sentences = []
+            for s in sentences:
+                speaker = s.get("speaker_name", "Unknown")
+                text = s.get("text") or s.get("raw_text") or ""
+                start_time = s.get("start_time")
+
+                if start_time is not None:
+                    # Convert seconds to MM:SS format
+                    minutes = int(start_time // 60)
+                    seconds = int(start_time % 60)
+                    timestamp = f"[{minutes:02d}:{seconds:02d}]"
+                    formatted_sentences.append(f"{timestamp} {speaker}: {text}")
+                else:
+                    formatted_sentences.append(f"{speaker}: {text}")
+
+            lines.extend(formatted_sentences)
 
             return "\n".join(lines)
         except Exception as e:

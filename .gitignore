@@ -22,13 +22,36 @@ htmlcov/
 
 # macOS
 .DS_Store
+*.DS_Store
 
 # IDE files
 .idea/
 .vscode/
 *.sublime-*
+*.swp
+*.swo
+*~
 
 # Distribution
 dist/
 build/
 *.zip
+
+# Backup files
+*-backup.*
+*.backup
+*.bak
+
+# Test artifacts
+.pytest_cache/
+.ruff_cache/
+*.pyc
+
+# Claude AI
+.claude/
+
+# Additional logs
+debug_*.log
+
+# Test data
+transcripts_for_testing/

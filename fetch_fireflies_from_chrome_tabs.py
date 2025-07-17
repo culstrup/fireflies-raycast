@@ -80,7 +80,8 @@ def extract_transcript_ids(urls):
         transcript_ids = []
         # Updated pattern to handle both old format (with ::) and new format (without ::)
         # Transcript IDs must contain at least one digit to be valid
-        pattern = r"fireflies\.ai/view/(?:.*::)?([A-Za-z0-9]*[0-9]+[A-Za-z0-9]*)/?$"
+        # Also handles URLs with query parameters (?param=value)
+        pattern = r"fireflies\.ai/view/(?:.*::)?([A-Za-z0-9]*[0-9]+[A-Za-z0-9]*)(?:/|\?|$)"
 
         for url in urls:
             match = re.search(pattern, url)

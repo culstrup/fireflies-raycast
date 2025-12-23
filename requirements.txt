@@ -4,6 +4,10 @@ python-dotenv>=0.15.0
 python-dateutil>=2.8.0
 google-generativeai>=0.8.0
 
+# Security: explicit pins for transitive dependencies (Dependabot alerts)
+urllib3>=2.6.0
+filelock>=3.20.1
+
 # Testing dependencies
 pytest>=7.0.0
 pytest-cov>=4.0.0

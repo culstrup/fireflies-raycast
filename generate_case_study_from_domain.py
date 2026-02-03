@@ -8,9 +8,10 @@ import time
 import traceback
 from datetime import datetime, timedelta
 
-import google.generativeai as genai
 import pyperclip
 from dateutil import parser as date_parser
+from google import genai
+from google.genai import types
 
 from fireflies_api import FirefliesAPI
 
@@ -81,20 +82,9 @@ class DomainCaseStudyGenerator:
             logger.error("GOOGLE_AI_STUDIO_KEY not found in environment")
             raise ValueError("GOOGLE_AI_STUDIO_KEY not set. Please add it to your .env file.")
 
-        genai.configure(api_key=api_key)
-
-        # Use Gemini 2.5 Pro Preview
-        try:
-            self.model = genai.GenerativeModel("gemini-2.5-pro-preview-05-06")
-            logger.info("Initialized Gemini 2.5 Pro Preview model")
-        except Exception as e:
-            logger.error(f"Failed to initialize Gemini 2.5 Pro: {e}")
-            try:
-                self.model = genai.GenerativeModel("gemini-1.5-pro")
-                logger.info("Fell back to Gemini 1.5 Pro model")
-            except Exception:
-                self.model = genai.GenerativeModel("gemini-pro")
-                logger.info("Fell back to gemini-pro model")
+        self.client = genai.Client(api_key=api_key)
+        self.model_name = "gemini-2.5-pro-preview-05-06"
+        logger.info("Initialized Google GenAI client with Gemini 2.5 Pro Preview")
 
     def extract_participant_emails(self, transcript: dict) -> list[str]:
         """
@@ -441,9 +431,10 @@ class DomainCaseStudyGenerator:
             start_time = time.time()
 
             # Generate content
-            response = self.model.generate_content(
-                prompt,
-                generation_config=genai.types.GenerationConfig(
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
                     temperature=0.7,
                     max_output_tokens=8192,
                 ),

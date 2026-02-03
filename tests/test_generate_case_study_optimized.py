@@ -131,7 +131,7 @@ class TestOptimizedCaseStudyGenerator(unittest.TestCase):
         # Mock Gemini response
         mock_response = MagicMock()
         mock_response.text = "Generated case study content"
-        self.generator.model.generate_content.return_value = mock_response
+        self.generator.client.models.generate_content.return_value = mock_response
 
         # Run generate
         self.generator.generate()

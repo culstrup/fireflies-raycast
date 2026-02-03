@@ -14,7 +14,7 @@ from typing import Dict, List  # noqa: UP035
 # Add parent directory to path
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-import google.generativeai as genai
+from google import genai
 
 from fireflies_api import FirefliesAPI
 
@@ -62,20 +62,9 @@ class OptimizedCaseStudyGenerator:
         if not api_key:
             raise ValueError("GOOGLE_AI_STUDIO_KEY not found in environment")
 
-        genai.configure(api_key=api_key)
-
-        # Use Gemini 2.5 Pro Preview
-        try:
-            self.model = genai.GenerativeModel("gemini-2.5-pro-preview-05-06")
-            logger.info("Initialized Gemini 2.5 Pro Preview model")
-        except Exception as e:
-            logger.error(f"Failed to initialize Gemini 2.5 Pro: {e}")
-            try:
-                self.model = genai.GenerativeModel("gemini-1.5-pro")
-                logger.info("Fell back to Gemini 1.5 Pro model")
-            except Exception:
-                self.model = genai.GenerativeModel("gemini-pro")
-                logger.info("Fell back to gemini-pro model")
+        self.client = genai.Client(api_key=api_key)
+        self.model_name = "gemini-2.5-pro-preview-05-06"
+        logger.info("Initialized Google GenAI client with Gemini 2.5 Pro Preview")
 
     def extract_participant_emails(self, transcript: Dict) -> List[str]:  # noqa: UP006
         """Extract all participant emails from a transcript using all available fields."""
@@ -310,7 +299,7 @@ class OptimizedCaseStudyGenerator:
         prompt = CASE_STUDY_PROMPT.format(domain=self.domain, transcripts=transcripts_content)
 
         try:
-            response = self.model.generate_content(prompt)
+            response = self.client.models.generate_content(model=self.model_name, contents=prompt)
             case_study = response.text
 
             # Copy to clipboard

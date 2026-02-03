@@ -2,13 +2,12 @@ requests>=2.25.0
 pyperclip>=1.8.0
 python-dotenv>=0.15.0
 python-dateutil>=2.8.0
-google-generativeai>=0.8.0
+google-genai>=1.0.0
 
 # Security: explicit pins for transitive dependencies (Dependabot alerts)
 urllib3>=2.6.0
 filelock>=3.20.1; python_version >= "3.10"
 pyasn1>=0.6.1
-protobuf>=5.29.3
 virtualenv>=20.27.1
 
 # Testing dependencies

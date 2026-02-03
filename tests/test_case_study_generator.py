@@ -23,7 +23,7 @@ class TestDomainCaseStudyGenerator(unittest.TestCase):
 
         self.assertEqual(generator.domain, "example.com")
         self.assertEqual(generator.days_back, 90)
-        mock_genai.configure.assert_called_once_with(api_key="test-key")
+        mock_genai.Client.assert_called_once_with(api_key="test-key")
 
     @patch("generate_case_study_from_domain.genai")
     @patch("generate_case_study_from_domain.FirefliesAPI")
